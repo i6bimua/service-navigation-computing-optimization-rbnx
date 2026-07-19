@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "robonix-compute-optimization-skill"
 version = "0.1.0"
-description = "Adaptive compute orchestration for low-latency dual-system embodied inference"
+description = "An external compute optimization tool for RoboNix dual-system vision-language navigation"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MulanPSL-2.0"

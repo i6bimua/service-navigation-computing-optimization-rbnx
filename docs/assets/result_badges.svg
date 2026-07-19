@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="28" viewBox="0 0 780 28" role="img" aria-labelledby="title desc">
+  <title id="title">Compute Optimization Skill benchmark highlights</title>
+  <desc id="desc">2.22 times faster, 12.7 SPL improvement, 0.60 gigabytes edge memory, 1,839 R2R-CE episodes, and MulanPSL 2.0 license.</desc>
+  <style>
+    text {
+      fill: #ffffff;
+      font: 700 13px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+  </style>
+  <rect x="0" y="0" width="140" height="28" rx="7" fill="#16803c"/>
+  <text x="70" y="14">2.22&#215; faster</text>
+  <rect x="148" y="0" width="130" height="28" rx="7" fill="#2563eb"/>
+  <text x="213" y="14">SPL +12.7</text>
+  <rect x="286" y="0" width="160" height="28" rx="7" fill="#7c3aed"/>
+  <text x="366" y="14">Edge 0.60 GB</text>
+  <rect x="454" y="0" width="160" height="28" rx="7" fill="#d97706"/>
+  <text x="534" y="14">R2R-CE 1,839</text>
+  <rect x="622" y="0" width="158" height="28" rx="7" fill="#b91c1c"/>
+  <text x="701" y="14">MulanPSL-2.0</text>
+</svg>

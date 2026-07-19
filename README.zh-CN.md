@@ -2,7 +2,7 @@
 
 # RoboNix Compute Optimization Skill
 
-**面向双系统视觉语言导航的自适应计算优化 Skill**
+**面向 RoboNix 双系统视觉语言导航的开源计算优化工具**
 
 [English](README.md) ·
 [效果](#results) ·
@@ -12,15 +12,12 @@
 [Benchmark](#benchmark-reproduction)
 
 [![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
-[![Speedup](https://img.shields.io/badge/Orin%2BA100-2.22x_faster-16a34a.svg)](#benchmark-results)
-[![SPL](https://img.shields.io/badge/SPL_vs_Naive_ECC-%2B12.7-2563eb.svg)](#benchmark-results)
-[![Edge Memory](https://img.shields.io/badge/edge_memory-0.60_GB-7c3aed.svg)](#benchmark-results)
-[![Benchmark](https://img.shields.io/badge/R2R--CE-1%2C839_episodes-f59e0b.svg)](#benchmark-results)
-[![License](https://img.shields.io/badge/license-MulanPSL--2.0-c2410c.svg)](#license)
+<br>
+[![项目指标](docs/assets/result_badges.svg)](#benchmark-results)
 
 </div>
 
-RoboNix Compute Optimization Skill 是一个经过测量验证的双系统 VLN 计算运行时：慢速语义推理运行在云端 GPU，时延敏感的动作生成保留在端侧。运行时结合异步执行、关键 latent 同步、active/pending 上下文缓存、自适应超时处理和逐步遥测。
+RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量验证的双系统 VLN 计算优化模块：慢速语义推理运行在云端 GPU，时延敏感的动作生成保留在端侧。该工具结合异步执行、关键 latent 同步、active/pending 上下文缓存、自适应超时处理和逐步遥测。
 
 **项目边界：**本仓库交付计算运行时、模型适配器、评测入口和外部 HTTP Skill 进程；不修改 RoboNix 核心，也不宣称提供 RoboNix 内置 Driver、capability manifest 或 Atlas 注册。
 

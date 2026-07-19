@@ -2,7 +2,7 @@
 
 # RoboNix Compute Optimization Skill
 
-**Adaptive compute orchestration for fast, accurate dual-system vision-language navigation**
+**An open-source compute optimization tool for RoboNix dual-system vision-language navigation**
 
 [简体中文](README.zh-CN.md) ·
 [Results](#results) ·
@@ -12,19 +12,17 @@
 [Benchmark](#benchmark-reproduction)
 
 [![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
-[![Speedup](https://img.shields.io/badge/Orin%2BA100-2.22x_faster-16a34a.svg)](#benchmark-results)
-[![SPL](https://img.shields.io/badge/SPL_vs_Naive_ECC-%2B12.7-2563eb.svg)](#benchmark-results)
-[![Edge Memory](https://img.shields.io/badge/edge_memory-0.60_GB-7c3aed.svg)](#benchmark-results)
-[![Benchmark](https://img.shields.io/badge/R2R--CE-1%2C839_episodes-f59e0b.svg)](#benchmark-results)
-[![License](https://img.shields.io/badge/license-MulanPSL--2.0-c2410c.svg)](#license)
+<br>
+[![Project metrics](docs/assets/result_badges.svg)](#benchmark-results)
 
 </div>
 
-RoboNix Compute Optimization Skill is a measured dual-system VLN runtime: slow
-semantic reasoning runs on a cloud GPU, while latency-sensitive action
-generation stays on the edge. It combines asynchronous execution, key-latent
-synchronization, active/pending context buffering, adaptive timeout handling,
-and per-step telemetry.
+RoboNix Compute Optimization Skill provides RoboNix with an external, measured
+compute optimization module for dual-system VLN. Slow semantic reasoning runs
+on a cloud GPU, while latency-sensitive action generation stays on the edge.
+The tool combines asynchronous execution, key-latent synchronization,
+active/pending context buffering, adaptive timeout handling, and per-step
+telemetry.
 
 **Project boundary.** This repository provides the compute runtime, model
 adapters, evaluation entry points, and an external HTTP Skill process. It does
