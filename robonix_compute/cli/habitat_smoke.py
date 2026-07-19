@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 from pathlib import Path
@@ -48,6 +49,22 @@ def _prepend_pythonpath(env: dict[str, str], *paths: Path) -> None:
     env["PYTHONPATH"] = os.pathsep.join(entries)
 
 
+def _resolve_episode_ids(raw_value: str, data_root: Path) -> str:
+    value = str(raw_value).strip()
+    if value.lower() != "all":
+        return value
+    episode_path = data_root / "vln_ce/raw_data/r2r/val_unseen/val_unseen.json.gz"
+    if not episode_path.is_file():
+        raise FileNotFoundError(f"Cannot expand --episodes all; missing R2R-CE split: {episode_path}")
+    with gzip.open(episode_path, "rt", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    episodes = payload.get("episodes")
+    if not isinstance(episodes, list) or not episodes:
+        raise ValueError(f"Cannot expand --episodes all; invalid episodes list in {episode_path}")
+    episode_ids = [str(episode["episode_id"]) for episode in episodes]
+    return ",".join(episode_ids)
+
+
 def _run_real_edge_cloud_habitat(args: argparse.Namespace) -> None:
     internnav_root = args.internnav_root.expanduser().resolve()
     measure_script = internnav_root / "scripts/eval/measure_edge_cloud_s2_runtime.py"
@@ -57,6 +74,7 @@ def _run_real_edge_cloud_habitat(args: argparse.Namespace) -> None:
     s1_model_path = args.s1_model_path.expanduser().resolve()
     data_root = args.data_root.expanduser().resolve()
     output_root = args.output_dir.expanduser().resolve()
+    episodes = _resolve_episode_ids(str(args.episodes), data_root)
     command = [
         sys.executable,
         str(measure_script),
@@ -69,7 +87,7 @@ def _run_real_edge_cloud_habitat(args: argparse.Namespace) -> None:
         "--checkpoint-path",
         str(checkpoint_path),
         "--episodes",
-        str(args.episodes),
+        episodes,
         "--cloud-gpu-id",
         str(args.cloud_gpu_id),
         "--edge-gpu-id",
@@ -104,7 +122,7 @@ def _run_real_edge_cloud_habitat(args: argparse.Namespace) -> None:
         "s1_model_path": str(s1_model_path),
         "data_root": str(data_root),
         "output_root": str(output_root),
-        "episodes": args.episodes,
+        "episodes": episodes,
         "cloud_gpu_id": args.cloud_gpu_id,
         "edge_gpu_id": args.edge_gpu_id,
         "cloud_bind_host": args.cloud_bind_host,

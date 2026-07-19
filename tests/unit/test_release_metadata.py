@@ -46,3 +46,8 @@ def test_all_svg_assets_are_valid_xml() -> None:
     assert svg_paths
     for path in svg_paths:
         ElementTree.parse(path)
+
+
+def test_docs_directory_contains_assets_only() -> None:
+    assert not list((ROOT / "docs").glob("*.md"))
+    assert (ROOT / "docs" / "assets" / "compute_optimization_architecture.png").is_file()

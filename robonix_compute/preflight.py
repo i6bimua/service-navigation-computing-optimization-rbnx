@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import importlib.util
+import json
 from pathlib import Path
 import shutil
 import socket
 import subprocess
 from typing import Any, Iterable
+
+from robonix_compute.benchmark_data import validate_benchmark_data
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,45 @@ def _check_import(module_name: str, *, required: bool = True) -> PreflightCheck:
         return PreflightCheck(f"python import: {module_name}", "ok", module_name)
     status = "error" if required else "warn"
     return PreflightCheck(f"python import: {module_name}", status, f"module not importable: {module_name}")
+
+
+def _check_full_checkpoint(path: Path) -> PreflightCheck:
+    path = path.expanduser()
+    if not path.is_dir():
+        return PreflightCheck("full model checkpoint", "error", f"missing directory: {path}")
+    config_path = path / "config.json"
+    if not config_path.is_file():
+        return PreflightCheck("full model checkpoint", "error", f"missing file: {config_path}")
+    single_file = path / "model.safetensors"
+    if single_file.is_file():
+        return PreflightCheck("full model checkpoint", "ok", f"{path}; weights={single_file.name}")
+    index_path = path / "model.safetensors.index.json"
+    if not index_path.is_file():
+        return PreflightCheck(
+            "full model checkpoint",
+            "error",
+            f"missing model.safetensors or model.safetensors.index.json in {path}",
+        )
+    try:
+        payload = json.loads(index_path.read_text(encoding="utf-8"))
+        shards = sorted(set(payload["weight_map"].values()))
+    except (OSError, json.JSONDecodeError, KeyError, AttributeError) as exc:
+        return PreflightCheck("full model checkpoint", "error", f"invalid {index_path}: {exc}")
+    missing = [name for name in shards if not (path / name).is_file()]
+    if missing:
+        return PreflightCheck("full model checkpoint", "error", f"missing weight shards in {path}: {missing}")
+    return PreflightCheck("full model checkpoint", "ok", f"{path}; shards={len(shards)}")
+
+
+def _check_s1_checkpoint(path: Path) -> PreflightCheck:
+    path = path.expanduser()
+    if not path.is_dir():
+        return PreflightCheck("S1-only checkpoint", "error", f"missing directory: {path}")
+    required = [path / "config.json", path / "model.safetensors"]
+    missing = [item.name for item in required if not item.is_file()]
+    if missing:
+        return PreflightCheck("S1-only checkpoint", "error", f"missing files in {path}: {missing}")
+    return PreflightCheck("S1-only checkpoint", "ok", str(path))
 
 
 def _check_port(host: str, port: int) -> PreflightCheck:
@@ -100,6 +142,7 @@ def run_preflight(
     data_root: Path,
     checkpoint_path: Path,
     s1_model_path: Path,
+    depth_checkpoint_path: Path,
     output_dir: Path,
     analysis_config: str,
     edge_config: str,
@@ -113,13 +156,19 @@ def run_preflight(
     data_root = data_root.expanduser()
     checkpoint_path = checkpoint_path.expanduser()
     s1_model_path = s1_model_path.expanduser()
+    depth_checkpoint_path = depth_checkpoint_path.expanduser()
     output_dir = output_dir.expanduser()
 
     checks: list[PreflightCheck] = []
     checks.append(_check_path("InternNav root", internnav_root, kind="dir"))
-    checks.append(_check_path("Habitat data root", data_root, kind="dir"))
-    checks.append(_check_path("full model checkpoint", checkpoint_path, kind="dir"))
-    checks.append(_check_path("S1-only checkpoint", s1_model_path, kind="dir"))
+    data_report = validate_benchmark_data(data_root, profile="core")
+    checks.extend(
+        PreflightCheck(f"benchmark data: {item.name}", item.status, item.detail)
+        for item in data_report.checks
+    )
+    checks.append(_check_full_checkpoint(checkpoint_path))
+    checks.append(_check_s1_checkpoint(s1_model_path))
+    checks.append(_check_path("depth checkpoint", depth_checkpoint_path, kind="file"))
     checks.append(_check_path("Habitat measurement script", internnav_root / "scripts/eval/measure_edge_cloud_s2_runtime.py", kind="file"))
     checks.append(_check_path("analysis config", internnav_root / analysis_config, kind="file"))
     checks.append(_check_path("edge config", internnav_root / edge_config, kind="file"))

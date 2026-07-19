@@ -1,3 +1,5 @@
+import gzip
+import json
 from pathlib import Path
 
 from robonix_compute import preflight
@@ -12,10 +14,30 @@ def _make_valid_tree(tmp_path: Path) -> dict:
     data_root = tmp_path / "data"
     checkpoint_path = tmp_path / "checkpoints/InternVLA-N1"
     s1_model_path = tmp_path / "checkpoints/InternVLA-N1-S1"
+    depth_checkpoint_path = tmp_path / "checkpoints/depth_anything_v2_metric_hypersim_vits.pth"
     output_dir = tmp_path / "outputs/run"
-    data_root.mkdir()
+    episode_path = data_root / "vln_ce/raw_data/r2r/val_unseen/val_unseen.json.gz"
+    episode_path.parent.mkdir(parents=True)
+    episodes = [
+        {
+            "episode_id": episode_id,
+            "scene_id": "data/scene_datasets/mp3d/test-scan/test-scan.glb",
+        }
+        for episode_id in range(1, 1840)
+    ]
+    with gzip.open(episode_path, "wt", encoding="utf-8") as handle:
+        json.dump({"episodes": episodes}, handle)
+    scene_dir = data_root / "scene_data/mp3d_ce/mp3d/test-scan"
+    scene_dir.mkdir(parents=True)
+    (scene_dir / "test-scan.glb").write_bytes(b"glb")
+    (scene_dir / "test-scan.navmesh").write_bytes(b"navmesh")
     checkpoint_path.mkdir(parents=True)
+    (checkpoint_path / "config.json").write_text("{}", encoding="utf-8")
+    (checkpoint_path / "model.safetensors").write_bytes(b"weights")
     s1_model_path.mkdir(parents=True)
+    (s1_model_path / "config.json").write_text("{}", encoding="utf-8")
+    (s1_model_path / "model.safetensors").write_bytes(b"weights")
+    depth_checkpoint_path.write_bytes(b"depth")
     output_dir.parent.mkdir()
     return {
         "mode": "habitat_eval",
@@ -23,6 +45,7 @@ def _make_valid_tree(tmp_path: Path) -> dict:
         "data_root": data_root,
         "checkpoint_path": checkpoint_path,
         "s1_model_path": s1_model_path,
+        "depth_checkpoint_path": depth_checkpoint_path,
         "output_dir": output_dir,
         "analysis_config": "scripts/eval/configs/analysis_cfg.py",
         "edge_config": "scripts/eval/configs/h1_internvla_n1_async_cfg.py",

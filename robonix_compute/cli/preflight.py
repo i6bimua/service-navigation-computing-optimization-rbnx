@@ -17,6 +17,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--edge-config", default="scripts/eval/configs/h1_internvla_n1_async_cfg.py")
     parser.add_argument("--checkpoint-path", type=Path, default=env_path("ROBONIX_COMPUTE_MODEL_DIR", "checkpoints/InternVLA-N1"))
     parser.add_argument("--s1-model-path", type=Path, default=env_path("ROBONIX_COMPUTE_S1_MODEL_DIR", "checkpoints/InternVLA-N1-S1"))
+    parser.add_argument(
+        "--depth-checkpoint-path",
+        type=Path,
+        default=env_path(
+            "ROBONIX_COMPUTE_DEPTH_CKPT",
+            "checkpoints/depth_anything_v2_metric_hypersim_vits.pth",
+        ),
+    )
     parser.add_argument("--data-root", type=Path, default=env_path("ROBONIX_COMPUTE_DATA_ROOT", "data"))
     parser.add_argument("--output-dir", type=Path, default=env_path("ROBONIX_COMPUTE_OUTPUT_DIR", "outputs/habitat_eval"))
     parser.add_argument("--cloud-bind-host", default=os.environ.get("ROBONIX_COMPUTE_CLOUD_BIND_HOST", "0.0.0.0"))
@@ -37,6 +45,7 @@ def main() -> None:
         data_root=args.data_root,
         checkpoint_path=args.checkpoint_path,
         s1_model_path=args.s1_model_path,
+        depth_checkpoint_path=args.depth_checkpoint_path,
         output_dir=args.output_dir,
         analysis_config=args.analysis_config,
         edge_config=args.edge_config,

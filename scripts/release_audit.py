@@ -58,6 +58,7 @@ REQUIRED_PATHS = {
     "configs/supported_models.json",
     "benchmarks/r2r_ce/metadata.yaml",
     "docs/assets/benchmark_overview.svg",
+    "docs/assets/compute_optimization_architecture.png",
 }
 FORBIDDEN_PATHS = {
     "setup.py",
@@ -91,6 +92,10 @@ def main() -> None:
     for relative in sorted(FORBIDDEN_PATHS):
         if (root / relative).exists():
             failures.append(f"forbidden legacy release path: {relative}")
+    for path in sorted((root / "docs").glob("*.md")):
+        failures.append(
+            f"documentation must remain in the root README files: {path.relative_to(root)}"
+        )
 
     for path in iter_files(root):
         rel = path.relative_to(root)

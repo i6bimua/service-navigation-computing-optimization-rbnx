@@ -43,7 +43,7 @@ torch = [
 [project.urls]
 Homepage = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill"
 Repository = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill"
-Documentation = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/tree/main/docs"
+Documentation = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill#readme"
 Issues = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/issues"
 
 [project.scripts]
@@ -55,6 +55,7 @@ robonix-compute-habitat-smoke = "robonix_compute.cli.habitat_smoke:main"
 robonix-compute-habitat-eval = "robonix_compute.cli.habitat_eval:main"
 robonix-compute-skill = "robonix_compute.cli.robonix_skill:main"
 robonix-compute-preflight = "robonix_compute.cli.preflight:main"
+robonix-compute-data-check = "robonix_compute.cli.data_check:main"
 
 [tool.setuptools.packages.find]
 include = ["robonix_compute*"]

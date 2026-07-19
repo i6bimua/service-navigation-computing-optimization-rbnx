@@ -1,7 +1,20 @@
+import gzip
 import json
 import subprocess
 import sys
 from pathlib import Path
+
+from robonix_compute.cli.habitat_smoke import _resolve_episode_ids
+
+
+def test_resolve_all_habitat_episode_ids(tmp_path: Path):
+    episode_path = tmp_path / "vln_ce/raw_data/r2r/val_unseen/val_unseen.json.gz"
+    episode_path.parent.mkdir(parents=True)
+    with gzip.open(episode_path, "wt", encoding="utf-8") as handle:
+        json.dump({"episodes": [{"episode_id": 1}, {"episode_id": 7}]}, handle)
+
+    assert _resolve_episode_ids("all", tmp_path) == "1,7"
+    assert _resolve_episode_ids("1,2,3", tmp_path) == "1,2,3"
 
 
 def test_summarize_habitat_eval_outputs_metrics(tmp_path: Path):

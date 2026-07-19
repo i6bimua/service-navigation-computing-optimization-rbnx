@@ -24,8 +24,9 @@ EPISODES="${ROBONIX_COMPUTE_HABITAT_EPISODES:-1}"
 CLOUD_GPU_ID="${ROBONIX_COMPUTE_CLOUD_GPU_ID:-1}"
 EDGE_GPU_ID="${ROBONIX_COMPUTE_EDGE_GPU_ID:-0}"
 PORT="${ROBONIX_COMPUTE_CLOUD_PORT:-18765}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-python -m robonix_compute.cli.habitat_eval \
+"${PYTHON_BIN}" -m robonix_compute.cli.habitat_eval \
   --internnav-root "${INTERNNAV_ROOT}" \
   --data-root "${ROBONIX_COMPUTE_DATA_ROOT}" \
   --checkpoint-path "${ROBONIX_COMPUTE_MODEL_DIR}" \
@@ -37,4 +38,4 @@ python -m robonix_compute.cli.habitat_eval \
   --output-dir "${OUTPUT_DIR}" \
   --strict
 
-python scripts/summarize_habitat_eval.py "${OUTPUT_DIR}" --format table
+"${PYTHON_BIN}" scripts/summarize_habitat_eval.py "${OUTPUT_DIR}" --format table

@@ -9,11 +9,11 @@ from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[1]
 MARKDOWN_LINK = re.compile(r"!?\[[^\]]*]\(([^)]+)\)")
+EXPLICIT_ANCHOR = re.compile(r'<a\s+id=["\']([^"\']+)["\']\s*></a>')
 
 
 def markdown_files() -> list[Path]:
     files = [ROOT / "README.md", ROOT / "README.zh-CN.md"]
-    files.extend((ROOT / "docs").glob("*.md"))
     files.extend((ROOT / "benchmarks").rglob("*.md"))
     files.extend(
         ROOT / name
@@ -44,7 +44,16 @@ def validate_links() -> list[str]:
     failures: list[str] = []
     for source in markdown_files():
         text = source.read_text(encoding="utf-8")
+        anchors = set(EXPLICIT_ANCHOR.findall(text))
         for raw_target in MARKDOWN_LINK.findall(text):
+            normalized_target = raw_target.strip().strip("<>")
+            if normalized_target.startswith("#"):
+                anchor = unquote(normalized_target[1:])
+                if anchor not in anchors:
+                    failures.append(
+                        f"{source.relative_to(ROOT)}: missing local anchor {raw_target!r}"
+                    )
+                continue
             target = local_target(source, raw_target)
             if target is not None and not target.exists():
                 failures.append(
