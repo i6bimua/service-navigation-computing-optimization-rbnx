@@ -53,8 +53,10 @@ manifest, or Atlas registration.
 - [Additional Dataset Readiness](#additional-dataset-readiness)
 - [Service Ports and Environment Variables](#service-ports-and-environment-variables)
 - [Repository Layout](#repository-layout)
+- [Roadmap](#roadmap)
 - [Troubleshooting](#troubleshooting)
 - [Validation and Contribution](#validation-and-contribution)
+- [Contributors](#contributors)
 - [Citation](#citation)
 - [License](#license)
 
@@ -78,8 +80,6 @@ manifest, or Atlas registration.
 
 <div align="center">
   <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark overview">
-  <br>
-  <sub><b>Figure 1.</b> R2R-CE val-unseen overview generated from the committed result CSV.</sub>
 </div>
 
 Compute Skill optimizes the latency–accuracy trade-off rather than a single
@@ -118,8 +118,6 @@ state.
 
 <div align="center">
   <img width="100%" src="docs/assets/compute_optimization_architecture.png" alt="Compute optimization runtime architecture">
-  <br>
-  <sub><b>Figure 2.</b> The edge keeps the action loop responsive while cloud S2 refreshes semantic context only when requested.</sub>
 </div>
 
 1. **Fast local loop:** edge S1 consumes the latest observation and active
@@ -135,12 +133,6 @@ memory, and optional diffusion latents remain behind adapters.
 
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix Integration Boundary
-
-<div align="center">
-  <img width="100%" src="docs/assets/compute_optimization_workflow.svg" alt="Target RoboNix integration workflow">
-  <br>
-  <sub><b>Figure 3.</b> Deployment flow and target external orchestration path.</sub>
-</div>
 
 | Delivered here | Boundary |
 | --- | --- |
@@ -162,7 +154,7 @@ licensed assets were parsed and validated but no model result is claimed.
 | Item | Status | What was actually verified |
 | --- | --- | --- |
 | CPU mock runtime | ✅ Executed | Five steps, context reuse, switching, timeout logic, and telemetry output |
-| Unit and integration tests | ✅ Executed | **34 passed**, 2 GPU/InternNav tests skipped outside the model environment |
+| Unit and integration tests | ✅ Executed | **35 passed**, 2 GPU/InternNav tests skipped outside the model environment |
 | R2R-CE core data | ✅ Executed | 1,839 episodes; all 11 referenced scenes have `.glb` and `.navmesh` |
 | Extended data profile | ✅ Data check | R2R short/medium/long, RxR English, and REVERIE navigation proxy parse successfully |
 | Habitat scene loading | ✅ Executed | Habitat-Sim 0.2.4 loaded an MP3D-CE scene and navmesh |
@@ -836,6 +828,21 @@ RoboNix-Compute-Optimization-Skill/
 └── tests/                         # Unit and integration coverage
 ```
 
+`robonix_compute/` is the canonical import-compatible Tool implementation.
+Top-level directories expose its deployment, benchmark, configuration,
+validation, and RoboNix-facing service workflows.
+
+<a id="roadmap"></a>
+## 🗺️ Roadmap
+
+- [x] Publish an independently runnable source-only package and CPU mock path.
+- [x] Validate the InternVLA-N1 DualVLN cloud-S2/edge-S1 runtime.
+- [x] Add strict R2R-CE data, checkpoint, environment, and result-provenance checks.
+- [ ] Publish sanitized full-split raw evaluation artifacts.
+- [ ] Provide a versioned RoboNix service adapter beyond the external HTTP boundary.
+- [ ] Add authenticated and encrypted production transport examples.
+- [ ] Validate additional model families and datasets before listing them as supported.
+
 <a id="troubleshooting"></a>
 ## 🩺 Troubleshooting
 
@@ -925,14 +932,21 @@ Security issues should be reported privately according to `SECURITY.md`.
 Contribution rules are in `CONTRIBUTING.md`; release history is in
 `CHANGELOG.md`.
 
+<a id="contributors"></a>
+## 🤝 Contributors
+
+We thank [Zihao Zheng (@zhengzihaoPKU)](https://github.com/zhengzihaoPKU) for
+his contributions to this RoboNix compute optimization Tool.
+
 <a id="citation"></a>
 ## 📝 Citation
 
-Repository citation:
+If this Tool supports your work, please consider giving the repository a star
+and citing it:
 
 ```bibtex
 @software{robonix_compute_optimization_skill_2026,
-  author  = {i6bimua},
+  author  = {Mao, Zhihao and Zheng, Zihao},
   title   = {RoboNix Compute Optimization Skill},
   year    = {2026},
   version = {0.1.0},

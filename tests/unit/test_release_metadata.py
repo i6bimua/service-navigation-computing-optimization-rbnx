@@ -51,3 +51,16 @@ def test_all_svg_assets_are_valid_xml() -> None:
 def test_docs_directory_contains_assets_only() -> None:
     assert not list((ROOT / "docs").glob("*.md"))
     assert (ROOT / "docs" / "assets" / "compute_optimization_architecture.png").is_file()
+
+
+def test_contributor_and_citation_metadata_match() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_zh = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+    citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+
+    profile = "https://github.com/zhengzihaoPKU"
+    assert profile in readme
+    assert profile in readme_zh
+    assert "author  = {Mao, Zhihao and Zheng, Zihao}" in readme
+    assert "family-names: Zheng" in citation
+    assert "given-names: Zihao" in citation

@@ -45,8 +45,10 @@ RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量
 - [扩展数据集就绪状态](#additional-dataset-readiness)
 - [端口与环境变量](#service-ports-and-environment-variables)
 - [仓库结构](#repository-layout)
+- [路线图](#roadmap)
 - [故障排查](#troubleshooting)
 - [验证与贡献](#validation-and-contribution)
+- [贡献者](#contributors)
 - [引用](#citation)
 - [许可证](#license)
 
@@ -68,8 +70,6 @@ RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量
 
 <div align="center">
   <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark 结果总览">
-  <br>
-  <sub><b>图 1.</b> 由仓库内结构化 CSV 自动生成的 R2R-CE val-unseen 结果总览。</sub>
 </div>
 
 Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标。在 Orin+A100 上，SR 与 Edge Only 基本持平（`62.8` 对 `62.9`），平均单步时延降低 2.22×。Step Sync 的 SR 更高，但每步阻塞 `1644.5 ms`。Orin 与 Thor 完整表格见 [Benchmark 结果](#benchmark-results)。
@@ -101,8 +101,6 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 
 <div align="center">
   <img width="100%" src="docs/assets/compute_optimization_architecture.png" alt="计算优化运行时架构">
-  <br>
-  <sub><b>图 2.</b> 端侧持续保持动作闭环，仅在需要时由云端 S2 刷新语义上下文。</sub>
 </div>
 
 1. **端侧快速闭环：**S1 融合最新观测和 active context 生成动作，不等待云端推理。
@@ -113,12 +111,6 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix 集成边界
-
-<div align="center">
-  <img width="100%" src="docs/assets/compute_optimization_workflow.svg" alt="目标 RoboNix 集成工作流">
-  <br>
-  <sub><b>图 3.</b> 部署流程与目标外部编排路径。</sub>
-</div>
 
 | 本仓库已交付 | 边界 |
 | --- | --- |
@@ -138,7 +130,7 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 | 项目 | 状态 | 实际验证内容 |
 | --- | --- | --- |
 | CPU Mock 运行时 | ✅ 已执行 | 五步运行、上下文复用、切换、超时逻辑和遥测输出 |
-| 单元与集成测试 | ✅ 已执行 | **34 passed**；非模型环境中 2 个 GPU/InternNav 测试跳过 |
+| 单元与集成测试 | ✅ 已执行 | **35 passed**；非模型环境中 2 个 GPU/InternNav 测试跳过 |
 | R2R-CE 核心数据 | ✅ 已执行 | 1,839 个 episode；11 个被引用场景均有 `.glb` 与 `.navmesh` |
 | 扩展数据 profile | ✅ 数据检查 | R2R short/medium/long、RxR English 和 REVERIE 导航代理均可解析 |
 | Habitat 场景加载 | ✅ 已执行 | Habitat-Sim 0.2.4 成功加载 MP3D-CE 场景与 navmesh |
@@ -773,6 +765,19 @@ RoboNix-Compute-Optimization-Skill/
 └── tests/                         # 单元与集成测试
 ```
 
+`robonix_compute/` 是可直接导入的规范 Tool 实现。顶层目录提供部署、Benchmark、配置、验证以及面向 RoboNix 的服务工作流。
+
+<a id="roadmap"></a>
+## 🗺️ 路线图
+
+- [x] 发布可独立运行的纯源码软件包和 CPU Mock 路径。
+- [x] 验证 InternVLA-N1 DualVLN 云端 S2/端侧 S1 运行时。
+- [x] 补齐严格的 R2R-CE 数据、权重、环境和结果溯源检查。
+- [ ] 发布经过脱敏的完整 split 原始评测文件。
+- [ ] 在外部 HTTP 边界基础上提供版本化 RoboNix 服务适配器。
+- [ ] 增加带身份验证和加密的生产传输示例。
+- [ ] 验证更多模型和数据集后，再将其列为正式支持项。
+
 <a id="troubleshooting"></a>
 ## 🩺 故障排查
 
@@ -853,12 +858,19 @@ python3 -m build
 
 安全问题按 `SECURITY.md` 私下报告；贡献规则见 `CONTRIBUTING.md`；版本记录见 `CHANGELOG.md`。
 
+<a id="contributors"></a>
+## 🤝 贡献者
+
+感谢 [Zihao Zheng（@zhengzihaoPKU）](https://github.com/zhengzihaoPKU) 对本 RoboNix 计算优化 Tool 的贡献。
+
 <a id="citation"></a>
 ## 📝 引用
 
+如果本 Tool 对你的工作有帮助，欢迎为仓库点亮 Star 并引用：
+
 ```bibtex
 @software{robonix_compute_optimization_skill_2026,
-  author  = {i6bimua},
+  author  = {Mao, Zhihao and Zheng, Zihao},
   title   = {RoboNix Compute Optimization Skill},
   year    = {2026},
   version = {0.1.0},
