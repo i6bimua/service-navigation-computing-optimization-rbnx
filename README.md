@@ -934,8 +934,8 @@ Contribution rules are in `CONTRIBUTING.md`; release history is in
 <a id="contributors"></a>
 ## 🤝 Contributors
 
-- **Hangyu Cao** ([@i6bimua](https://github.com/i6bimua)) — lead author and maintainer.
-- **Zihao Zheng** ([@zhengzihaoPKU](https://github.com/zhengzihaoPKU)) — contributor.
+- **Zihao Zheng** ([@zhengzihaoPKU](https://github.com/zhengzihaoPKU)) — Leader.
+- **Hangyu Cao** ([@i6bimua](https://github.com/i6bimua)) — Maintainer.
 
 <a id="citation"></a>
 ## 📝 Citation

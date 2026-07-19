@@ -61,6 +61,8 @@ def test_contributor_and_citation_metadata_match() -> None:
     profile = "https://github.com/zhengzihaoPKU"
     assert profile in readme
     assert profile in readme_zh
+    assert "— Leader." in readme
+    assert "— Maintainer." in readme
     assert "author  = {Cao, Hangyu and Zheng, Zihao}" in readme
     assert "family-names: Cao" in citation
     assert "given-names: Hangyu" in citation

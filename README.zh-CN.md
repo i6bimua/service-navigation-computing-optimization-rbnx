@@ -860,8 +860,8 @@ python3 -m build
 <a id="contributors"></a>
 ## 🤝 贡献者
 
-- **Hangyu Cao**（[@i6bimua](https://github.com/i6bimua)）— 主要作者与维护者。
-- **Zihao Zheng**（[@zhengzihaoPKU](https://github.com/zhengzihaoPKU)）— 贡献者。
+- **Zihao Zheng**（[@zhengzihaoPKU](https://github.com/zhengzihaoPKU)）— Leader。
+- **Hangyu Cao**（[@i6bimua](https://github.com/i6bimua)）— Maintainer。
 
 <a id="citation"></a>
 ## 📝 引用
