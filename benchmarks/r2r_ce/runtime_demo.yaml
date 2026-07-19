@@ -1,0 +1,18 @@
+name: Habitat Runtime Demo
+model: InternVLA-N1
+checkpoint_source: InternRobotics/InternVLA-N1
+runtime_mode: single_machine_baseline
+simulator: Habitat
+dataset: R2R-CE
+split: val_unseen
+scene_id: Z6MFQCViBuw
+episode_id: 206
+metrics:
+  success: 1.0
+  spl: 0.9747430829406037
+  navigation_error: 0.24611695110797882
+  steps: 87
+assets:
+  animation: docs/assets/demo/habitat_demo.gif
+  video: docs/assets/demo/habitat_demo.mp4
+  running_images: docs/assets/demo/habitat_running_images.png

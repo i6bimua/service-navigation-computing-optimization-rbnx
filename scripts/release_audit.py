@@ -45,6 +45,9 @@ BINARY_SUFFIXES = {
     ".tar",
     ".gz",
 }
+ALLOWED_BINARY_PATHS = {
+    "docs/assets/demo/habitat_demo.mp4",
+}
 
 SKIP_DIRS = {".git", ".pytest_cache", "__pycache__", "dist", "build", ".venv", "outputs", "logs", "data", "checkpoints"}
 SKIP_FILES = {"scripts/release_audit.py"}
@@ -59,6 +62,9 @@ REQUIRED_PATHS = {
     "benchmarks/r2r_ce/metadata.yaml",
     "docs/assets/benchmark_overview.svg",
     "docs/assets/compute_optimization_architecture.png",
+    "docs/assets/demo/habitat_demo.gif",
+    "docs/assets/demo/habitat_demo.mp4",
+    "docs/assets/demo/habitat_running_images.png",
 }
 FORBIDDEN_PATHS = {
     "setup.py",
@@ -103,7 +109,7 @@ def main() -> None:
             continue
         if any(part in DENY_PATH_PARTS for part in rel.parts):
             failures.append(f"blocked path component: {rel}")
-        if path.suffix in BINARY_SUFFIXES:
+        if path.suffix in BINARY_SUFFIXES and rel.as_posix() not in ALLOWED_BINARY_PATHS:
             failures.append(f"blocked artifact suffix: {rel}")
         if path.stat().st_size > max_bytes:
             failures.append(f"file too large: {rel} ({path.stat().st_size} bytes)")

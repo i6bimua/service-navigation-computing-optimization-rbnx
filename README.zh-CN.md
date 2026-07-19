@@ -5,15 +5,24 @@
 **面向 RoboNix 双系统视觉语言导航的开源计算优化工具**
 
 [English](README.md) ·
+[🎬 演示视频](#demo-video) ·
 [🏆 Benchmark 结果](#benchmark-results) ·
-[架构](#architecture) ·
-[快速开始](#quick-start) ·
-[数据集](#dataset-preparation)
+[运行图片](#running-images) ·
+[快速开始](#quick-start)
 
 [![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
 <br>
 [![项目指标](docs/assets/result_badges.svg)](#benchmark-results)
 
+</div>
+
+<a id="demo-video"></a>
+## 🎬 演示视频
+
+<div align="center">
+  <a href="docs/assets/demo/habitat_demo.mp4">
+    <img width="100%" src="docs/assets/demo/habitat_demo.gif" alt="Habitat 运行演示">
+  </a>
 </div>
 
 RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量验证的双系统 VLN 计算优化模块：慢速语义推理运行在云端 GPU，时延敏感的动作生成保留在端侧。该工具结合异步执行、关键 latent 同步、active/pending 上下文缓存、自适应超时处理和逐步遥测。
@@ -23,10 +32,12 @@ RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量
 <a id="table-of-contents"></a>
 ## 📚 目录
 
+- [演示视频](#demo-video)
 - [项目动态](#news)
 - [系统效果](#results)
 - [核心计算优化](#what-the-skill-optimizes)
 - [系统架构](#architecture)
+- [运行图片](#running-images)
 - [RoboNix 集成边界](#robonix-integration-boundary)
 - [验证范围](#validated-scope)
 - [支持模型与平台](#supported-models-and-platforms)
@@ -107,6 +118,13 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 3. **可测量执行：**逐步记录时延、同步、超时、上下文复用、载荷大小与导航指标。
 
 语义轨迹 latent、pixel goal、观测记忆和可选 diffusion latent 等模型专用字段都保留在适配器之后。
+
+<a id="running-images"></a>
+## 🖼️ 运行图片
+
+<div align="center">
+  <img width="100%" src="docs/assets/demo/habitat_running_images.png" alt="Habitat 运行图片与导航路径">
+</div>
 
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix 集成边界

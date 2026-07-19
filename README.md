@@ -5,15 +5,24 @@
 **An open-source compute optimization tool for RoboNix dual-system vision-language navigation**
 
 [简体中文](README.zh-CN.md) ·
+[🎬 Demo Video](#demo-video) ·
 [🏆 Benchmark Results](#benchmark-results) ·
-[Architecture](#architecture) ·
-[Quick Start](#quick-start) ·
-[Dataset](#dataset-preparation)
+[Running Images](#running-images) ·
+[Quick Start](#quick-start)
 
 [![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
 <br>
 [![Project metrics](docs/assets/result_badges.svg)](#benchmark-results)
 
+</div>
+
+<a id="demo-video"></a>
+## 🎬 Demo Video
+
+<div align="center">
+  <a href="docs/assets/demo/habitat_demo.mp4">
+    <img width="100%" src="docs/assets/demo/habitat_demo.gif" alt="Habitat runtime demo">
+  </a>
 </div>
 
 RoboNix Compute Optimization Skill provides RoboNix with an external, measured
@@ -31,10 +40,12 @@ manifest, or Atlas registration.
 <a id="table-of-contents"></a>
 ## 📚 Table of Contents
 
+- [Demo Video](#demo-video)
 - [News](#news)
 - [Results](#results)
 - [What the Skill Optimizes](#what-the-skill-optimizes)
 - [Architecture](#architecture)
+- [Running Images](#running-images)
 - [RoboNix Integration Boundary](#robonix-integration-boundary)
 - [Validated Scope](#validated-scope)
 - [Supported Models and Platforms](#supported-models-and-platforms)
@@ -129,6 +140,13 @@ state.
 
 Model-specific fields such as trajectory latents, pixel goals, observation
 memory, and optional diffusion latents remain behind adapters.
+
+<a id="running-images"></a>
+## 🖼️ Running Images
+
+<div align="center">
+  <img width="100%" src="docs/assets/demo/habitat_running_images.png" alt="Habitat running images and navigation path">
+</div>
 
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix Integration Boundary
