@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Environments
+.env
+.venv/
+venv/
+
+# Local runtime outputs
+outputs/
+logs/
+checkpoints/
+data/
+wandb/
+
+# Model/data artifacts: publish externally, not in git.
+*.safetensors
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.npy
+*.npz
+*.mp4
+*.tar.gz
+*.zip
+
+# Local/editor files
+.DS_Store
+.idea/
+.vscode/
+nohup.out
+*.pid

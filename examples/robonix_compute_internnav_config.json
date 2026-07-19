@@ -1,0 +1,19 @@
+{
+  "mode": "internnav",
+  "cloud_host": "${ROBONIX_COMPUTE_CLOUD_HOST}",
+  "cloud_port": "${ROBONIX_COMPUTE_CLOUD_PORT}",
+  "model_dir": "${ROBONIX_COMPUTE_MODEL_DIR}",
+  "s1_model_dir": "${ROBONIX_COMPUTE_S1_MODEL_DIR}",
+  "device": "cuda:0",
+  "require_initial_latent": false,
+  "initial_timeout_s": 0.4,
+  "min_timeout_s": 0.05,
+  "max_timeout_s": 10.0,
+  "timeout_window_size": 32,
+  "tau_lower": 0.5,
+  "tau_upper": 0.8,
+  "tau_initial": 0.8,
+  "delta": 0.015,
+  "k_max": 8,
+  "eta": 0.05
+}

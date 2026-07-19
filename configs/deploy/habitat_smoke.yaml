@@ -1,0 +1,22 @@
+role: habitat_smoke
+runtime:
+  cloud_host: ${ROBONIX_COMPUTE_CLOUD_HOST:-127.0.0.1}
+  cloud_port: ${ROBONIX_COMPUTE_CLOUD_PORT:-8765}
+  data_root: ${ROBONIX_COMPUTE_DATA_ROOT:-data}
+  output_dir: ${ROBONIX_COMPUTE_OUTPUT_DIR:-outputs/habitat_smoke}
+habitat:
+  benchmark: R2R-CE
+  episodes: 1
+  simulator_owner: cloud_gateway
+  sync_policy_owner: edge_runtime
+evaluation:
+  strategy: robonix_compute_online
+  metrics:
+    - NE
+    - SR
+    - SPL
+    - mean_step_latency_s
+    - p95_step_latency_s
+    - sync_count
+    - timeout_count
+    - latent_reuse_count

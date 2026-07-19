@@ -1,0 +1,18 @@
+{
+  "mode": "mock",
+  "cloud_host": "127.0.0.1",
+  "cloud_port": 8765,
+  "model_dir": "checkpoints/InternVLA-N1",
+  "s1_model_dir": "checkpoints/InternVLA-N1-S1",
+  "require_initial_latent": false,
+  "initial_timeout_s": 0.4,
+  "min_timeout_s": 0.05,
+  "max_timeout_s": 10.0,
+  "timeout_window_size": 32,
+  "tau_lower": 0.5,
+  "tau_upper": 0.8,
+  "tau_initial": 0.8,
+  "delta": 0.015,
+  "k_max": 8,
+  "eta": 0.05
+}

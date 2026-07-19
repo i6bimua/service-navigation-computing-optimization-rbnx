@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: If you use this software, please cite the repository and the upstream InternNav/InternVLA work.
+title: RoboNix Compute Optimization Skill
+type: software
+version: 0.1.0
+date-released: 2026-07-19
+authors:
+  - family-names: i6bimua
+    email: 3087918372@qq.com
+repository-code: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
+url: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
+license: MulanPSL-2.0
+keywords:
+  - RoboNix
+  - embodied AI
+  - vision-language navigation
+  - compute optimization
+  - edge inference

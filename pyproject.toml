@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robonix-compute-optimization-skill"
+version = "0.1.0"
+description = "Adaptive compute orchestration for low-latency dual-system embodied inference"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MulanPSL-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "i6bimua", email = "3087918372@qq.com" }]
+keywords = ["robonix", "embodied-ai", "vln", "compute-optimization", "edge-inference"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "msgpack>=1.0",
+  "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1",
+  "pytest>=7",
+  "pytest-timeout>=2",
+]
+websocket = [
+  "websockets>=12",
+]
+download = [
+  "huggingface-hub>=0.23",
+]
+torch = [
+  "torch",
+]
+
+[project.urls]
+Homepage = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill"
+Repository = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill"
+Documentation = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/tree/main/docs"
+Issues = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/issues"
+
+[project.scripts]
+robonix-compute-download = "robonix_compute.cli.download:main"
+robonix-compute-export-s1 = "robonix_compute.cli.export_s1:main"
+robonix-compute-cloud = "robonix_compute.cli.cloud:main"
+robonix-compute-edge = "robonix_compute.cli.edge:main"
+robonix-compute-habitat-smoke = "robonix_compute.cli.habitat_smoke:main"
+robonix-compute-habitat-eval = "robonix_compute.cli.habitat_eval:main"
+robonix-compute-skill = "robonix_compute.cli.robonix_skill:main"
+robonix-compute-preflight = "robonix_compute.cli.preflight:main"
+
+[tool.setuptools.packages.find]
+include = ["robonix_compute*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --maxfail=1"
+markers = [
+  "integration: integration tests",
+  "gpu: requires CUDA/GPU",
+  "habitat: requires Habitat simulator and VLN data",
+]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"

@@ -1,0 +1,34 @@
+role: habitat_eval
+runtime:
+  internnav_root: ${INTERNNAV_ROOT}
+  cloud_host: ${ROBONIX_COMPUTE_CLOUD_HOST:-127.0.0.1}
+  cloud_port: ${ROBONIX_COMPUTE_CLOUD_PORT:-18765}
+  data_root: ${ROBONIX_COMPUTE_DATA_ROOT}
+  model_dir: ${ROBONIX_COMPUTE_MODEL_DIR}
+  s1_model_dir: ${ROBONIX_COMPUTE_S1_MODEL_DIR}
+  output_dir: ${ROBONIX_COMPUTE_OUTPUT_DIR:-outputs/habitat_eval}
+  cloud_gpu_id: ${ROBONIX_COMPUTE_CLOUD_GPU_ID:-1}
+  edge_gpu_id: ${ROBONIX_COMPUTE_EDGE_GPU_ID:-0}
+habitat:
+  benchmark: R2R-CE
+  split: val_unseen
+  episodes: ${ROBONIX_COMPUTE_HABITAT_EPISODES:-1}
+  simulator_owner: cloud_gateway
+  sync_policy_owner: edge_runtime
+evaluation:
+  strategy: robonix_compute_online
+  command: robonix-compute-habitat-eval
+  result_files:
+    - eval/result.json
+    - eval/progress.json
+    - edge_cloud_s2_summary.json
+  metrics:
+    - NE
+    - SR
+    - SPL
+    - OS
+    - mean_s2_total_wall_time_ms
+    - mean_s1_round_trip_wall_time_ms
+    - sync_count
+    - timeout_count
+    - latent_reuse_count

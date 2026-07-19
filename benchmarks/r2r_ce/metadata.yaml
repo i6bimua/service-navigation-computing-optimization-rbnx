@@ -1,0 +1,30 @@
+benchmark: R2R-CE
+split: val-unseen
+episodes: 1839
+backbone: InternVLA-N1 DualVLN
+weights: original backbone weights
+simulator: VLN-CE continuous navigation
+cloud_device: NVIDIA A100
+edge_devices:
+  - NVIDIA AGX Jetson Orin
+  - NVIDIA AGX Jetson Thor
+edge_power_mode: MAX_N
+metrics:
+  navigation:
+    - NE
+    - SR
+    - SPL
+  system:
+    - average step latency
+    - peak edge memory
+    - peak cloud memory
+comparison_methods:
+  - Edge Only
+  - Cloud Only
+  - Naive ECC
+  - Step Sync
+  - Compute Skill
+provenance:
+  status: project-benchmark
+  raw_full_split_logs_in_repository: false
+  note: The repository versions compact benchmark summaries and evaluation entry points. Full raw evaluation logs are not bundled.

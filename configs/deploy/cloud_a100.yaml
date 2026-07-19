@@ -1,0 +1,17 @@
+role: cloud
+hardware: A100
+runtime:
+  cloud_host: ${ROBONIX_COMPUTE_CLOUD_HOST:-0.0.0.0}
+  cloud_port: ${ROBONIX_COMPUTE_CLOUD_PORT:-8765}
+  checkpoint_dir: ${ROBONIX_COMPUTE_CHECKPOINT_DIR:-checkpoints}
+  model_dir: ${ROBONIX_COMPUTE_MODEL_DIR:-checkpoints/InternVLA-N1}
+  depth_ckpt: ${ROBONIX_COMPUTE_DEPTH_CKPT:-checkpoints/depth_anything_v2_metric_hypersim_vits.pth}
+  output_dir: ${ROBONIX_COMPUTE_OUTPUT_DIR:-outputs/cloud}
+model:
+  adapter: internnav_s2
+  policy_name: InternVLAN1_Policy
+  device: cuda:0
+  dtype: bfloat16
+network:
+  transport: websocket
+  max_message_size: unlimited

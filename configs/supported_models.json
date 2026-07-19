@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "id": "internvla-n1-dualvln",
+      "display_name": "InternVLA-N1 DualVLN",
+      "status": "validated",
+      "checkpoint": "InternRobotics/InternVLA-N1-DualVLN",
+      "framework": "InternNav",
+      "cloud_component": "S2 semantic latent generation",
+      "edge_component": "S1 action generation",
+      "benchmarks": [
+        "R2R-CE val-unseen"
+      ],
+      "cloud_hardware": [
+        "NVIDIA A100"
+      ],
+      "edge_hardware": [
+        "NVIDIA AGX Jetson Orin",
+        "NVIDIA AGX Jetson Thor"
+      ]
+    },
+    {
+      "id": "mock-dual-system",
+      "display_name": "Mock S1/S2 Backend",
+      "status": "ci-validated",
+      "scope": "Runtime contract, synchronization, timeout, context reuse, and telemetry"
+    },
+    {
+      "id": "generic-dual-system-runner",
+      "display_name": "Generic Dual-System Runner Contract",
+      "status": "adapter-api",
+      "scope": "Integration boundary only; model-specific validation required"
+    }
+  ],
+  "unsupported_examples": [
+    "OpenVLA",
+    "pi0",
+    "pi0.5",
+    "pi0-FAST",
+    "StreamVLN"
+  ]
+}

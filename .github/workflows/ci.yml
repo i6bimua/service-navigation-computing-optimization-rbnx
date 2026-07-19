@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,websocket]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Validate documentation
+        run: python scripts/check_docs.py
+
+      - name: Audit release tree
+        run: python scripts/release_audit.py
+
+      - name: Check generated benchmark asset
+        run: |
+          python benchmarks/r2r_ce/render_results.py
+          git diff --exit-code
+
+      - name: Check CLI entry points
+        run: |
+          robonix-compute-download --help
+          robonix-compute-export-s1 --help
+          robonix-compute-cloud --help
+          robonix-compute-edge --help
+          robonix-compute-habitat-smoke --help
+          robonix-compute-habitat-eval --help
+          robonix-compute-skill --help
+          robonix-compute-preflight --help
+
+      - name: Build source and wheel distributions
+        run: python -m build

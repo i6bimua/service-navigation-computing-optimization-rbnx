@@ -1,0 +1,32 @@
+role: edge
+hardware: Orin
+runtime:
+  cloud_host: ${ROBONIX_COMPUTE_CLOUD_HOST:-127.0.0.1}
+  cloud_port: ${ROBONIX_COMPUTE_CLOUD_PORT:-8765}
+  checkpoint_dir: ${ROBONIX_COMPUTE_CHECKPOINT_DIR:-checkpoints}
+  model_dir: ${ROBONIX_COMPUTE_MODEL_DIR:-checkpoints/InternVLA-N1}
+  s1_model_dir: ${ROBONIX_COMPUTE_S1_MODEL_DIR:-checkpoints/InternVLA-N1-S1}
+  output_dir: ${ROBONIX_COMPUTE_OUTPUT_DIR:-outputs/edge}
+model:
+  adapter: internnav_s1
+  policy_name: InternVLAN1_Policy
+  device: cuda:0
+  prefer_s1_only: true
+edge:
+  require_initial_latent: false
+  initial_timeout_s: 0.4
+  min_timeout_s: 0.05
+  max_timeout_s: 10.0
+  timeout_window_size: 32
+switching:
+  tau_lower: 0.50
+  tau_upper: 0.80
+  tau_initial: 0.80
+  delta: 0.015
+  k_max: 8
+  eta: 0.05
+timeout:
+  alpha: 0.125
+  beta: 0.25
+  kappa: 4.0
+  window_size: 32

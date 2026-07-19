@@ -1,0 +1,4 @@
+component,type,upper_bound_kb,reported_cost
+Extra pending latent slot,Edge memory,7.0,< 7.0 KB
+Control states and counters,Edge memory,1.0,< 1.0 KB
+Switching and orchestration logic,Runtime,,Negligible

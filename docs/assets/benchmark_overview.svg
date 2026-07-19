@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" role="img" aria-label="RoboNix Compute Optimization Skill R2R-CE benchmark overview">
+<defs>
+<style>
+text { font-family: Inter, Arial, sans-serif; }
+.title { font-size: 38px; font-weight: 750; fill: #0f172a; }
+.subtitle { font-size: 18px; fill: #475569; }
+.card { fill: #ffffff; stroke: #dbe4ee; stroke-width: 2; }
+.card-label { font-size: 17px; font-weight: 650; fill: #475569; }
+.card-value { font-size: 38px; font-weight: 780; fill: #0f172a; }
+.card-detail { font-size: 15px; fill: #64748b; }
+.section { font-size: 21px; font-weight: 700; fill: #0f172a; }
+.bar-label { font-size: 15px; font-weight: 650; fill: #334155; }
+.bar-value { font-size: 15px; font-weight: 700; fill: #334155; }
+.bar-bg { fill: #e8eef5; }
+.note { font-size: 14px; fill: #64748b; }
+</style>
+</defs>
+<rect width="1400" height="700" fill="#f7fafc"/>
+<text x="60" y="66" class="title" text-anchor="start">R2R-CE Performance at a Glance</text>
+<text x="60" y="104" class="subtitle" text-anchor="start">DualVLN · val-unseen (1,839 episodes) · NVIDIA Orin + A100</text>
+<rect x="60" y="150" width="300" height="168" rx="18" class="card"/>
+<rect x="60" y="150" width="8" height="168" rx="4" fill="#2563eb"/>
+<text x="88" y="190" class="card-label" text-anchor="start">Latency speedup</text>
+<text x="88" y="246" class="card-value" text-anchor="start">2.22×</text>
+<text x="88" y="285" class="card-detail" text-anchor="start">vs. Edge Only</text>
+<rect x="380" y="150" width="300" height="168" rx="18" class="card"/>
+<rect x="380" y="150" width="8" height="168" rx="4" fill="#16a34a"/>
+<text x="408" y="190" class="card-label" text-anchor="start">Success rate</text>
+<text x="408" y="246" class="card-value" text-anchor="start">+6.1 pt</text>
+<text x="408" y="285" class="card-detail" text-anchor="start">56.7% → 62.8%</text>
+<rect x="700" y="150" width="300" height="168" rx="18" class="card"/>
+<rect x="700" y="150" width="8" height="168" rx="4" fill="#f59e0b"/>
+<text x="728" y="190" class="card-label" text-anchor="start">SPL recovery</text>
+<text x="728" y="246" class="card-value" text-anchor="start">+12.7 pt</text>
+<text x="728" y="285" class="card-detail" text-anchor="start">45.1 → 57.8</text>
+<rect x="1020" y="150" width="300" height="168" rx="18" class="card"/>
+<rect x="1020" y="150" width="8" height="168" rx="4" fill="#7c3aed"/>
+<text x="1048" y="190" class="card-label" text-anchor="start">Runtime overhead</text>
+<text x="1048" y="246" class="card-value" text-anchor="start">&lt; 8 KB</text>
+<text x="1048" y="285" class="card-detail" text-anchor="start">buffer + control state</text>
+<text x="60" y="380" class="section" text-anchor="start">Accuracy recovery over Naive ECC</text>
+<text x="735" y="380" class="section" text-anchor="start">Edge latency reduction</text>
+<text x="60" y="422" class="bar-label" text-anchor="start">Naive ECC SR</text>
+<rect x="60" y="430" width="430" height="20" rx="10" class="bar-bg"/>
+<rect x="60" y="430" width="348.3" height="20" rx="10" fill="#94a3b8"/>
+<text x="508" y="446" class="bar-value" text-anchor="start">56.7%</text>
+<text x="60" y="478" class="bar-label" text-anchor="start">Compute Skill SR</text>
+<rect x="60" y="486" width="430" height="20" rx="10" class="bar-bg"/>
+<rect x="60" y="486" width="385.8" height="20" rx="10" fill="#16a34a"/>
+<text x="508" y="502" class="bar-value" text-anchor="start">62.8%</text>
+<text x="60" y="552" class="bar-label" text-anchor="start">Naive ECC SPL</text>
+<rect x="60" y="560" width="430" height="20" rx="10" class="bar-bg"/>
+<rect x="60" y="560" width="298.4" height="20" rx="10" fill="#94a3b8"/>
+<text x="508" y="576" class="bar-value" text-anchor="start">45.1</text>
+<text x="60" y="608" class="bar-label" text-anchor="start">Compute Skill SPL</text>
+<rect x="60" y="616" width="430" height="20" rx="10" class="bar-bg"/>
+<rect x="60" y="616" width="382.4" height="20" rx="10" fill="#f59e0b"/>
+<text x="508" y="632" class="bar-value" text-anchor="start">57.8</text>
+<text x="735" y="422" class="bar-label" text-anchor="start">Edge Only</text>
+<rect x="735" y="430" width="430" height="20" rx="10" class="bar-bg"/>
+<rect x="735" y="430" width="411.6" height="20" rx="10" fill="#94a3b8"/>
+<text x="1183" y="446" class="bar-value" text-anchor="start">497.8 ms</text>
+<text x="735" y="478" class="bar-label" text-anchor="start">Compute Skill</text>
+<rect x="735" y="486" width="430" height="20" rx="10" class="bar-bg"/>
+<rect x="735" y="486" width="185.6" height="20" rx="10" fill="#2563eb"/>
+<text x="1183" y="502" class="bar-value" text-anchor="start">224.4 ms</text>
+<text x="735" y="570" class="note" text-anchor="start">Validated project benchmark on the complete val-unseen split.</text>
+<text x="735" y="600" class="note" text-anchor="start">See benchmarks/r2r_ce for all baselines, Thor results, and metadata.</text>
+</svg>
