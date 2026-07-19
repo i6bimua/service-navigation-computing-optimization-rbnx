@@ -5,11 +5,10 @@
 **面向 RoboNix 双系统视觉语言导航的开源计算优化工具**
 
 [English](README.md) ·
-[效果](#results) ·
+[🏆 Benchmark 结果](#benchmark-results) ·
 [架构](#architecture) ·
 [快速开始](#quick-start) ·
-[数据集](#dataset-preparation) ·
-[Benchmark](#benchmark-reproduction)
+[数据集](#dataset-preparation)
 
 [![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
 <br>
@@ -861,7 +860,8 @@ python3 -m build
 <a id="contributors"></a>
 ## 🤝 贡献者
 
-感谢 [Zihao Zheng（@zhengzihaoPKU）](https://github.com/zhengzihaoPKU) 对本 RoboNix 计算优化 Tool 的贡献。
+- **Hangyu Cao**（[@i6bimua](https://github.com/i6bimua)）— 主要作者与维护者。
+- **Zihao Zheng**（[@zhengzihaoPKU](https://github.com/zhengzihaoPKU)）— 贡献者。
 
 <a id="citation"></a>
 ## 📝 引用
@@ -870,7 +870,7 @@ python3 -m build
 
 ```bibtex
 @software{robonix_compute_optimization_skill_2026,
-  author  = {Mao, Zhihao and Zheng, Zihao},
+  author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization Skill},
   year    = {2026},
   version = {0.1.0},

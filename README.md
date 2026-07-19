@@ -5,11 +5,10 @@
 **An open-source compute optimization tool for RoboNix dual-system vision-language navigation**
 
 [简体中文](README.zh-CN.md) ·
-[Results](#results) ·
+[🏆 Benchmark Results](#benchmark-results) ·
 [Architecture](#architecture) ·
 [Quick Start](#quick-start) ·
-[Dataset](#dataset-preparation) ·
-[Benchmark](#benchmark-reproduction)
+[Dataset](#dataset-preparation)
 
 [![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
 <br>
@@ -935,8 +934,8 @@ Contribution rules are in `CONTRIBUTING.md`; release history is in
 <a id="contributors"></a>
 ## 🤝 Contributors
 
-We thank [Zihao Zheng (@zhengzihaoPKU)](https://github.com/zhengzihaoPKU) for
-his contributions to this RoboNix compute optimization Tool.
+- **Hangyu Cao** ([@i6bimua](https://github.com/i6bimua)) — lead author and maintainer.
+- **Zihao Zheng** ([@zhengzihaoPKU](https://github.com/zhengzihaoPKU)) — contributor.
 
 <a id="citation"></a>
 ## 📝 Citation
@@ -946,7 +945,7 @@ and citing it:
 
 ```bibtex
 @software{robonix_compute_optimization_skill_2026,
-  author  = {Mao, Zhihao and Zheng, Zihao},
+  author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization Skill},
   year    = {2026},
   version = {0.1.0},

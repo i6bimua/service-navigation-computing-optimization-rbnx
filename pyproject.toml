@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = "MulanPSL-2.0"
 license-files = ["LICENSE", "NOTICE"]
-authors = [{ name = "i6bimua", email = "3087918372@qq.com" }]
+authors = [{ name = "Hangyu Cao", email = "3087918372@qq.com" }]
 keywords = ["robonix", "embodied-ai", "vln", "compute-optimization", "edge-inference"]
 classifiers = [
   "Development Status :: 3 - Alpha",
