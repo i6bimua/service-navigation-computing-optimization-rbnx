@@ -10,7 +10,7 @@
 [运行图片](#running-images) ·
 [快速开始](#quick-start)
 
-[![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
+[![CI](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml)
 <br>
 [![项目指标](docs/assets/result_badges.svg)](#benchmark-results)
 
@@ -34,6 +34,33 @@ RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量
 软件包，运行在机器人部署之外的 GPU 主机上。独立的 HTTP Skill API 继续为非 RoboNix
 编排器保留。详见
 [RoboNix 集成边界](#robonix-integration-boundary)。
+
+<a id="results"></a>
+## ⚡ 系统效果
+
+| 系统级结果 | 当前数值 | 结构化来源 |
+| --- | --- | --- |
+| 主 Benchmark | R2R-CE `val_unseen`，**1,839 个 episode** | `benchmarks/r2r_ce/metadata.yaml` |
+| Orin+A100 单步时延 | 相比 Edge Only **2.22× 加速**，`497.8 → 224.4 ms` | `benchmarks/r2r_ce/results/main_results.csv` |
+| 相比 Naive ECC 的质量恢复 | **+6.1 SR**、**+12.7 SPL** | `benchmarks/r2r_ce/results/main_results.csv` |
+| 端侧模型内存 | **0.60 GB**，Edge Only 为 **16.63 GB** | `benchmarks/r2r_ce/results/main_results.csv` |
+| 运行时控制状态 | pending latent 与 counters 合计 **< 8 KB** | `benchmarks/r2r_ce/results/runtime_overhead.csv` |
+
+<div align="center">
+  <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark 结果总览">
+</div>
+
+Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标。在 Orin+A100 上，SR 与 Edge Only 基本持平（`62.8` 对 `62.9`），平均单步时延降低 2.22×。Step Sync 的 SR 更高，但每步阻塞 `1644.5 ms`。Orin 与 Thor 完整表格见 [Benchmark 结果](#benchmark-results)。
+
+### 按目标选择入口
+
+| 目标 | 入口 | 所需资源 |
+| --- | --- | --- |
+| 在 RoboNix 部署上运行本 skill | `rbnx build -f robonix_manifest.yaml && rbnx boot -f robonix_manifest.yaml` | 提供 camera 与 chassis 契约的机器人 |
+| 验证运行时 contract | `bash scripts/run_mock_compute.sh --steps 5` | 仅 CPU；安装后约一分钟 |
+| 检查真实模型就绪状态 | `robonix-compute-preflight ... --strict` | InternNav、Habitat、权重、数据和空闲 GPU |
+| 复现导航运行 | `bash scripts/run_habitat_eval.sh` | 已准备的 R2R-CE/MP3D-CE 环境 |
+| 接入非 RoboNix 编排器 | `robonix-compute-skill --port 8090 ...` | 调用 HTTP 生命周期 API 的外部客户端 |
 
 <a id="table-of-contents"></a>
 ## 📚 目录
@@ -71,33 +98,8 @@ RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量
 <a id="news"></a>
 ## 📰 项目动态
 
+- **2026-07-25 — v0.2.0：**成为可发布的 RoboNix skill 包 `robonix.skill.compute_optimization`：五个能力契约、注册到 Atlas 并暴露四个 MCP 工具的 provider（惰性激活）、离散动作到 `chassis/move` 的映射，以及无需硬件的接线夹具。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-19 — v0.1.0：**发布公开运行时、InternVLA-N1 DualVLN 适配器、HTTP Skill 边界、结构化 R2R-CE 结果包、授权数据门禁、严格模型/环境预检和双语复现流程。
-
-<a id="results"></a>
-## ⚡ 系统效果
-
-| 系统级结果 | 当前数值 | 结构化来源 |
-| --- | --- | --- |
-| 主 Benchmark | R2R-CE `val_unseen`，**1,839 个 episode** | `benchmarks/r2r_ce/metadata.yaml` |
-| Orin+A100 单步时延 | 相比 Edge Only **2.22× 加速**，`497.8 → 224.4 ms` | `benchmarks/r2r_ce/results/main_results.csv` |
-| 相比 Naive ECC 的质量恢复 | **+6.1 SR**、**+12.7 SPL** | `benchmarks/r2r_ce/results/main_results.csv` |
-| 端侧模型内存 | **0.60 GB**，Edge Only 为 **16.63 GB** | `benchmarks/r2r_ce/results/main_results.csv` |
-| 运行时控制状态 | pending latent 与 counters 合计 **< 8 KB** | `benchmarks/r2r_ce/results/runtime_overhead.csv` |
-
-<div align="center">
-  <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark 结果总览">
-</div>
-
-Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标。在 Orin+A100 上，SR 与 Edge Only 基本持平（`62.8` 对 `62.9`），平均单步时延降低 2.22×。Step Sync 的 SR 更高，但每步阻塞 `1644.5 ms`。Orin 与 Thor 完整表格见 [Benchmark 结果](#benchmark-results)。
-
-### 按目标选择入口
-
-| 目标 | 入口 | 所需资源 |
-| --- | --- | --- |
-| 验证运行时 contract | `bash scripts/run_mock_compute.sh --steps 5` | 仅 CPU；安装后约一分钟 |
-| 检查真实模型就绪状态 | `robonix-compute-preflight ... --strict` | InternNav、Habitat、权重、数据和空闲 GPU |
-| 复现导航运行 | `bash scripts/run_habitat_eval.sh` | 已准备的 R2R-CE/MP3D-CE 环境 |
-| 接入外部编排器 | `robonix-compute-skill --port 8090 ...` | 调用 HTTP 生命周期 API 的外部客户端 |
 
 <a id="what-the-skill-optimizes"></a>
 ## 🧩 核心计算优化
@@ -186,7 +188,7 @@ Benchmark 路径刻意保持原样。重新实现它的循环会让已发表的 
 # robonix_manifest.yaml
 skill:
   - name: compute_optimization
-    url: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
+    url: https://github.com/i6bimua/skill-compute-optimization-rbnx
     branch: main
     config:
       mode: internnav          # 建议先用 `mock`：纯 CPU、无需权重
@@ -268,8 +270,8 @@ OpenVLA、π0、π0.5、π0-FAST、StreamVLN 等模型不列为已支持。新�
 这条完整 CPU 路径不需要模型权重、仿真数据或 GPU：
 
 ```bash
-git clone https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill.git
-cd RoboNix-Compute-Optimization-Skill
+git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
+cd skill-compute-optimization-rbnx
 
 conda create -n robonix-compute python=3.10 -y
 conda activate robonix-compute
@@ -353,8 +355,8 @@ PyTorch 与 FlashAttention 必须匹配 CUDA 和设备软件栈。Orin/Thor 应�
 ### 1.1 创建环境
 
 ```bash
-git clone https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill.git
-cd RoboNix-Compute-Optimization-Skill
+git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
+cd skill-compute-optimization-rbnx
 export ROBONIX_COMPUTE_ROOT="$(pwd)"
 
 conda create -n robonix-compute python=3.10 -y
@@ -849,7 +851,13 @@ REVERIE proxy 不包含 object grounding、RGS 或 RGSPL，不能称为完整 RE
 ## 🗂️ 仓库结构
 
 ```text
-RoboNix-Compute-Optimization-Skill/
+skill-compute-optimization-rbnx/
+├── package_manifest.yaml          # rbnx 与 catalog 读取的 RoboNix 包声明
+├── CAPABILITY.md                  # 供 Pilot LLM 阅读的能力说明书
+├── config.spec                    # 全部配置字段的文档
+├── capabilities/
+│   ├── *.v1.toml                  # 本包提供的五个契约
+│   └── lib/compute_optimization/srv/   # 四个 MCP 工具的 ROS 2 IDL
 ├── .github/workflows/ci.yml       # Python 矩阵、CLI、文档、审计与构建
 ├── robonix_compute/
 │   ├── benchmark_data.py          # 授权数据集完整性检查
@@ -857,6 +865,7 @@ RoboNix-Compute-Optimization-Skill/
 │   ├── edge/                      # S1 运行时、切换器与超时处理
 │   ├── common/                    # 消息、缓存、序列化与遥测
 │   ├── eval/                      # Habitat adapter 与策略定义
+│   ├── rbnx/                      # RoboNix Skill provider（注册到 Atlas）
 │   ├── robonix/                   # 外部 HTTP Skill 边界
 │   └── cli/                       # robonix-compute-* 命令
 ├── benchmarks/r2r_ce/
@@ -866,11 +875,13 @@ RoboNix-Compute-Optimization-Skill/
 ├── configs/                       # 默认配置、部署预设与支持矩阵
 ├── docs/assets/                   # README 图片
 ├── examples/                      # Mock 与 InternNav JSON 配置
-├── scripts/                       # 启动、汇总、文档与发布检查
-└── tests/                         # 单元与集成测试
+├── scripts/                       # build/start/stop 入口，以及发布检查
+└── tests/
+    ├── unit/ · integration/       # 运行时与 skill 边界的测试覆盖
+    └── harness/                   # 合成机器人 + 部署清单（不发布）
 ```
 
-`robonix_compute/` 是可直接导入的规范 Tool 实现。顶层目录提供部署、Benchmark、配置、验证以及面向 RoboNix 的服务工作流。
+`robonix_compute/` 是可直接导入的规范实现，对外有两条边界：`rbnx/`（RoboNix Skill provider）与 `robonix/`（独立 HTTP API），二者包裹同一个 `EdgeRuntime`。其余顶层目录提供 Benchmark、配置与验证工作流。
 
 <a id="roadmap"></a>
 ## 🗺️ 路线图
@@ -980,7 +991,7 @@ python3 -m build
   title   = {RoboNix Compute Optimization Skill},
   year    = {2026},
   version = {0.1.0},
-  url     = {https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill}
+  url     = {https://github.com/i6bimua/skill-compute-optimization-rbnx}
 }
 ```
 

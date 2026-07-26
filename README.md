@@ -10,7 +10,7 @@
 [Running Images](#running-images) ·
 [Quick Start](#quick-start)
 
-[![CI](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/actions/workflows/ci.yml)
+[![CI](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml)
 <br>
 [![Project metrics](docs/assets/result_badges.svg)](#benchmark-results)
 
@@ -41,6 +41,37 @@ is part of this same runtime rather than a separate package, and runs on a GPU
 host outside the robot deployment. The standalone HTTP Skill API remains available for
 orchestrators that are not RoboNix deployments. See
 [RoboNix Integration Boundary](#robonix-integration-boundary).
+
+<a id="results"></a>
+## ⚡ Results
+
+| System-level result | Current value | Structured source |
+| --- | --- | --- |
+| Main benchmark | R2R-CE `val-unseen`, **1,839 episodes** | `benchmarks/r2r_ce/metadata.yaml` |
+| Orin+A100 step latency | **2.22× faster** than Edge Only, `497.8 → 224.4 ms` | `benchmarks/r2r_ce/results/main_results.csv` |
+| Quality recovery over Naive ECC | **+6.1 SR**, **+12.7 SPL** | `benchmarks/r2r_ce/results/main_results.csv` |
+| Edge model memory | **0.60 GB**, versus **16.63 GB** for Edge Only | `benchmarks/r2r_ce/results/main_results.csv` |
+| Runtime control state | **< 8 KB** for pending latent and counters | `benchmarks/r2r_ce/results/runtime_overhead.csv` |
+
+<div align="center">
+  <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark overview">
+</div>
+
+Compute Skill optimizes the latency–accuracy trade-off rather than a single
+metric. On Orin+A100, SR remains on par with Edge Only (`62.8` versus `62.9`)
+while average step latency falls by 2.22×. Step Sync reaches a higher SR but
+blocks for `1644.5 ms` per step. The complete Orin and Thor tables are included
+in [Benchmark Results](#benchmark-results).
+
+### Start by goal
+
+| Goal | Entry point | Required resources |
+| --- | --- | --- |
+| Run the skill on a RoboNix deployment | `rbnx build -f robonix_manifest.yaml && rbnx boot -f robonix_manifest.yaml` | A robot providing the camera and chassis contracts |
+| Verify the runtime contract | `bash scripts/run_mock_compute.sh --steps 5` | CPU only; about one minute after installation |
+| Check real-model readiness | `robonix-compute-preflight ... --strict` | InternNav, Habitat, checkpoints, data, and free GPUs |
+| Reproduce a navigation run | `bash scripts/run_habitat_eval.sh` | Prepared R2R-CE/MP3D-CE environment |
+| Integrate a non-RoboNix orchestrator | `robonix-compute-skill --port 8090 ...` | External client calling the HTTP lifecycle API |
 
 <a id="table-of-contents"></a>
 ## 📚 Table of Contents
@@ -78,39 +109,14 @@ orchestrators that are not RoboNix deployments. See
 <a id="news"></a>
 ## 📰 News
 
+- **2026-07-25 — v0.2.0:** Became a publishable RoboNix skill package,
+  `robonix.skill.compute_optimization`: five capability contracts, an
+  Atlas-registered provider with four MCP tools and lazy activation, the
+  discrete-action to `chassis/move` mapping, and a hardware-free wiring harness.
+  See [CHANGELOG.md](CHANGELOG.md).
 - **2026-07-19 — v0.1.0:** Released the public runtime, InternVLA-N1 DualVLN
   adapter, HTTP Skill boundary, structured R2R-CE result package, licensed-data
   gate, strict model/environment preflight, and bilingual reproduction guide.
-
-<a id="results"></a>
-## ⚡ Results
-
-| System-level result | Current value | Structured source |
-| --- | --- | --- |
-| Main benchmark | R2R-CE `val-unseen`, **1,839 episodes** | `benchmarks/r2r_ce/metadata.yaml` |
-| Orin+A100 step latency | **2.22× faster** than Edge Only, `497.8 → 224.4 ms` | `benchmarks/r2r_ce/results/main_results.csv` |
-| Quality recovery over Naive ECC | **+6.1 SR**, **+12.7 SPL** | `benchmarks/r2r_ce/results/main_results.csv` |
-| Edge model memory | **0.60 GB**, versus **16.63 GB** for Edge Only | `benchmarks/r2r_ce/results/main_results.csv` |
-| Runtime control state | **< 8 KB** for pending latent and counters | `benchmarks/r2r_ce/results/runtime_overhead.csv` |
-
-<div align="center">
-  <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark overview">
-</div>
-
-Compute Skill optimizes the latency–accuracy trade-off rather than a single
-metric. On Orin+A100, SR remains on par with Edge Only (`62.8` versus `62.9`)
-while average step latency falls by 2.22×. Step Sync reaches a higher SR but
-blocks for `1644.5 ms` per step. The complete Orin and Thor tables are included
-in [Benchmark Results](#benchmark-results).
-
-### Start by goal
-
-| Goal | Entry point | Required resources |
-| --- | --- | --- |
-| Verify the runtime contract | `bash scripts/run_mock_compute.sh --steps 5` | CPU only; about one minute after installation |
-| Check real-model readiness | `robonix-compute-preflight ... --strict` | InternNav, Habitat, checkpoints, data, and free GPUs |
-| Reproduce a navigation run | `bash scripts/run_habitat_eval.sh` | Prepared R2R-CE/MP3D-CE environment |
-| Integrate an orchestrator | `robonix-compute-skill --port 8090 ...` | External client calling the HTTP lifecycle API |
 
 <a id="what-the-skill-optimizes"></a>
 ## 🧩 What the Skill Optimizes
@@ -211,7 +217,7 @@ runtime that plugs into it.
 # robonix_manifest.yaml
 skill:
   - name: compute_optimization
-    url: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
+    url: https://github.com/i6bimua/skill-compute-optimization-rbnx
     branch: main
     config:
       mode: internnav          # `mock` first: CPU-only, no checkpoints
@@ -305,8 +311,8 @@ metadata.
 This complete CPU path requires no model weights, simulator data, or GPU:
 
 ```bash
-git clone https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill.git
-cd RoboNix-Compute-Optimization-Skill
+git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
+cd skill-compute-optimization-rbnx
 
 conda create -n robonix-compute python=3.10 -y
 conda activate robonix-compute
@@ -395,8 +401,8 @@ asset under its original license.
 ### 1.1 Create the environment
 
 ```bash
-git clone https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill.git
-cd RoboNix-Compute-Optimization-Skill
+git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
+cd skill-compute-optimization-rbnx
 export ROBONIX_COMPUTE_ROOT="$(pwd)"
 
 conda create -n robonix-compute python=3.10 -y
@@ -919,7 +925,13 @@ MatterSim/object-grounding stack and is deliberately excluded here.
 ## 🗂️ Repository Layout
 
 ```text
-RoboNix-Compute-Optimization-Skill/
+skill-compute-optimization-rbnx/
+├── package_manifest.yaml          # RoboNix package surface read by rbnx and the catalog
+├── CAPABILITY.md                  # Capability manual for Pilot's LLM
+├── config.spec                    # Every config field, documented
+├── capabilities/
+│   ├── *.v1.toml                  # The five contracts this package provides
+│   └── lib/compute_optimization/srv/   # ROS 2 IDL for the four MCP tools
 ├── .github/workflows/ci.yml       # Python matrix, CLI, docs, audit and build
 ├── robonix_compute/
 │   ├── benchmark_data.py          # Licensed dataset integrity checks
@@ -927,6 +939,7 @@ RoboNix-Compute-Optimization-Skill/
 │   ├── edge/                      # S1 runtime, switcher and timeout handling
 │   ├── common/                    # Messages, buffer, serialization and telemetry
 │   ├── eval/                      # Habitat adapter and strategy definitions
+│   ├── rbnx/                      # RoboNix Skill provider (Atlas-registered)
 │   ├── robonix/                   # External HTTP Skill boundary
 │   └── cli/                       # robonix-compute-* commands
 ├── benchmarks/r2r_ce/
@@ -936,13 +949,16 @@ RoboNix-Compute-Optimization-Skill/
 ├── configs/                       # Defaults, deployment presets and support matrix
 ├── docs/assets/                   # README figures
 ├── examples/                      # Mock and InternNav JSON configurations
-├── scripts/                       # Launch, summary, docs and release checks
-└── tests/                         # Unit and integration coverage
+├── scripts/                       # build/start/stop entry points, plus release checks
+└── tests/
+    ├── unit/ · integration/       # Coverage for the runtime and the skill boundary
+    └── harness/                   # Synthetic body + deployment manifests (not published)
 ```
 
-`robonix_compute/` is the canonical import-compatible Tool implementation.
-Top-level directories expose its deployment, benchmark, configuration,
-validation, and RoboNix-facing service workflows.
+`robonix_compute/` is the canonical import-compatible implementation. Its two
+outward boundaries are `rbnx/` (the RoboNix Skill provider) and `robonix/` (the
+standalone HTTP API); both wrap the same `EdgeRuntime`. The remaining top-level
+directories expose the benchmark, configuration and validation workflows.
 
 <a id="roadmap"></a>
 ## 🗺️ Roadmap
@@ -1062,7 +1078,7 @@ and citing it:
   title   = {RoboNix Compute Optimization Skill},
   year    = {2026},
   version = {0.1.0},
-  url     = {https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill}
+  url     = {https://github.com/i6bimua/skill-compute-optimization-rbnx}
 }
 ```
 

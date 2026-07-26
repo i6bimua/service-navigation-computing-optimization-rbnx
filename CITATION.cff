@@ -10,8 +10,8 @@ authors:
     email: 3087918372@qq.com
   - family-names: Zheng
     given-names: Zihao
-repository-code: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
-url: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
+repository-code: https://github.com/i6bimua/skill-compute-optimization-rbnx
+url: https://github.com/i6bimua/skill-compute-optimization-rbnx
 license: MulanPSL-2.0
 keywords:
   - RoboNix

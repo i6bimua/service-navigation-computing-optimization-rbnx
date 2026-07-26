@@ -44,10 +44,10 @@ torch = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill"
-Repository = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill"
-Documentation = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill#readme"
-Issues = "https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill/issues"
+Homepage = "https://github.com/i6bimua/skill-compute-optimization-rbnx"
+Repository = "https://github.com/i6bimua/skill-compute-optimization-rbnx"
+Documentation = "https://github.com/i6bimua/skill-compute-optimization-rbnx#readme"
+Issues = "https://github.com/i6bimua/skill-compute-optimization-rbnx/issues"
 
 [project.scripts]
 robonix-compute-download = "robonix_compute.cli.download:main"
