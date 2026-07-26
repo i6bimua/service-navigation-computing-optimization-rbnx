@@ -32,10 +32,15 @@ The tool combines asynchronous execution, key-latent synchronization,
 active/pending context buffering, adaptive timeout handling, and per-step
 telemetry.
 
-**Project boundary.** This repository provides the compute runtime, model
-adapters, evaluation entry points, and an external HTTP Skill process. It does
-not modify RoboNix core and does not claim an in-tree RoboNix Driver, capability
-manifest, or Atlas registration.
+**Project boundary.** This repository is a publishable RoboNix Skill package
+(`robonix.skill.compute_optimization`): it ships `package_manifest.yaml`,
+its own capability contracts, and a provider that registers with Atlas and
+exposes four MCP tools. It does not modify RoboNix core — it consumes the
+standard camera and chassis contracts and adds no vendor SDK. The cloud S2 process
+is part of this same runtime rather than a separate package, and runs on a GPU
+host outside the robot deployment. The standalone HTTP Skill API remains available for
+orchestrators that are not RoboNix deployments. See
+[RoboNix Integration Boundary](#robonix-integration-boundary).
 
 <a id="table-of-contents"></a>
 ## 📚 Table of Contents
@@ -151,13 +156,103 @@ memory, and optional diffusion latents remain behind adapters.
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix Integration Boundary
 
+This repository is a RoboNix **Skill package** — `robonix.skill.compute_optimization`.
+`package_manifest.yaml` at the repository root declares five capability
+contracts, so `rbnx boot` starts the provider, Atlas registers it, and Pilot's
+LLM can invoke it from natural language. See [CAPABILITY.md](CAPABILITY.md) for
+the capability manual and [config.spec](config.spec) for every config field.
+
+| Contract | Transport | Purpose |
+| --- | --- | --- |
+| `robonix/skill/compute_optimization/driver` | gRPC | Lifecycle (`CMD_INIT` / `CMD_ACTIVATE` / …) |
+| `robonix/skill/compute_optimization/navigate` | MCP | Start a run from an instruction → `run_id` |
+| `robonix/skill/compute_optimization/navigate/status` | MCP | Poll `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
+| `robonix/skill/compute_optimization/navigate/cancel` | MCP | Abort the active run (idempotent) |
+| `robonix/skill/compute_optimization/telemetry` | MCP | Per-run sync / timeout / reuse / latency counters |
+
+The skill consumes its observations and issues its actions through standard
+contracts, so it binds to any RoboNix robot that offers them — no vendor SDK
+enters this repository:
+
+| Consumed contract | Transport | Role |
+| --- | --- | --- |
+| `robonix/primitive/camera/rgb` · `depth` · `intrinsics` | ROS 2 | Observation |
+| `robonix/primitive/chassis/odom` (or `robonix/service/map/pose`) | ROS 2 | Pose |
+| `robonix/primitive/chassis/move` | gRPC | Action output (`forward_m` / `rotate_deg`) |
+
+Two boundaries remain deliberate:
+
 | Delivered here | Boundary |
 | --- | --- |
-| Cloud S2 and edge S1 processes | Run independently from RoboNix core |
-| HTTP lifecycle API | `/health`, `/setup`, `/reset`, `/step`, `/telemetry`, `/close` |
+| Cloud S2 process | Part of this same runtime, not a separate package. It runs on a GPU host outside the robot deployment and is reached at `cloud_host` / `cloud_port`. Edge and cloud are one system: the scheduling that spans them — when a fresh latent is worth paying for, how long to wait, what to do with a late reply — lives on the edge, in this package. |
+| HTTP lifecycle API | `/health`, `/setup`, `/reset`, `/step`, `/telemetry`, `/close` — retained for orchestrators that are not RoboNix deployments. Both boundaries wrap the same `EdgeRuntime`. |
 | WebSocket cloud–edge transport | Example transport, not production authentication or encryption |
 | InternNav adapters | Upstream model APIs do not enter RoboNix core |
-| Runtime telemetry | Exposed through files and the HTTP telemetry endpoint |
+
+### Two execution paths, one runtime
+
+The compute runtime is consumed two different ways, and they are not the same
+shape. Keeping them distinct matters, because only one of them produces the
+benchmark numbers above.
+
+| Path | Who owns the episode loop | Where the simulator is | What it is for |
+| --- | --- | --- | --- |
+| **Benchmark** (`robonix-compute-habitat-eval`) | The InternNav evaluator | Inside the cloud process, next to S2 | Reproducing the R2R-CE results. The evaluator owns `env.reset` / `env.step`, episode iteration and the SR/SPL metrics; the edge answers S1 requests over WebSocket. |
+| **Robot** (`robonix.skill.compute_optimization`) | This skill | No simulator — a real robot | Running on a RoboNix deployment. The skill owns the loop, reads the camera and chassis contracts, and issues `chassis/move`. |
+
+The benchmark path is deliberately left as it is. Re-implementing its loop would
+mean the published SR/SPL came from our loop rather than InternNav's validated
+harness, so it stays untouched and this repository only supplies the compute
+runtime that plugs into it.
+
+### Using the skill in a deployment
+
+```yaml
+# robonix_manifest.yaml
+skill:
+  - name: compute_optimization
+    url: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
+    branch: main
+    config:
+      mode: internnav          # `mock` first: CPU-only, no checkpoints
+      cloud_host: 10.0.0.2
+      cloud_port: 8765
+      step_size_m: 0.25        # must match the chassis primitive's increments
+      turn_angle_deg: 15.0
+```
+
+```bash
+robonix-compute-cloud --mode internnav --port 8765   # on the GPU host
+rbnx build -f robonix_manifest.yaml                  # runs rbnx codegen --mcp
+rbnx boot  -f robonix_manifest.yaml
+rbnx tools                                           # the four MCP tools appear
+rbnx chat                                            # "walk down the hall and stop at the kitchen"
+```
+
+Skills stay `INACTIVE` after boot by design: `CMD_INIT` only validates config,
+and the executor sends `CMD_ACTIVATE` on the first call, which is when
+checkpoints load and the cloud link opens.
+
+`step_size_m` and `turn_angle_deg` must equal the chassis primitive's own
+increments. `chassis/move` carries the requested magnitude, and a well-behaved
+primitive rejects a command far off its increment rather than travelling a
+different distance than the policy believes it did.
+
+### Verifying a deployment without hardware
+
+[tests/harness/](tests/harness/) holds a synthetic body (`mock_robot`) and a
+local deployment manifest, so `rbnx boot` and a full skill round-trip can be
+exercised with no simulator, no checkpoints and no GPU — only ROS 2 is required.
+It verifies wiring: contract resolution, image decode, the `chassis/move`
+round-trip, lazy activation, status polling, cancel. Its frames are synthetic
+gradients, so it says nothing about navigation quality.
+
+Without root, ROS 2 can be installed into a conda environment via RoboStack:
+
+```bash
+conda create -n rbnx-ros -c robostack-staging -c conda-forge python=3.11 \
+    ros-humble-ros-base ros-humble-sensor-msgs ros-humble-nav-msgs ros-humble-geometry-msgs
+```
 
 <a id="validated-scope"></a>
 ## 🧪 Validated Scope

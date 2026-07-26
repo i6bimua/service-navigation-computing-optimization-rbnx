@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robonix-compute-optimization-skill"
-version = "0.1.0"
-description = "An external compute optimization tool for RoboNix dual-system vision-language navigation"
+version = "0.2.0"
+description = "RoboNix skill package for compute-optimized dual-system vision-language navigation"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MulanPSL-2.0"
@@ -29,6 +29,9 @@ dev = [
   "build>=1",
   "pytest>=7",
   "pytest-timeout>=2",
+  # Reads package_manifest.yaml / config.spec so the Robonix package metadata
+  # is checked against the code rather than drifting from it.
+  "PyYAML>=6",
 ]
 websocket = [
   "websockets>=12",

@@ -27,7 +27,13 @@
 
 RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量验证的双系统 VLN 计算优化模块：慢速语义推理运行在云端 GPU，时延敏感的动作生成保留在端侧。该工具结合异步执行、关键 latent 同步、active/pending 上下文缓存、自适应超时处理和逐步遥测。
 
-**项目边界：**本仓库交付计算运行时、模型适配器、评测入口和外部 HTTP Skill 进程；不修改 RoboNix 核心，也不宣称提供 RoboNix 内置 Driver、capability manifest 或 Atlas 注册。
+**项目边界：**本仓库是一个可发布的 RoboNix Skill 软件包
+（`robonix.skill.compute_optimization`）：提供 `package_manifest.yaml`、自有能力
+约定，以及一个向 Atlas 注册并暴露四个 MCP 工具的 provider。它不修改 RoboNix 核心 ——
+只消费标准的相机与底盘约定，不引入任何厂商 SDK。云端 S2 属于同一套运行时而非独立
+软件包，运行在机器人部署之外的 GPU 主机上。独立的 HTTP Skill API 继续为非 RoboNix
+编排器保留。详见
+[RoboNix 集成边界](#robonix-integration-boundary)。
 
 <a id="table-of-contents"></a>
 ## 📚 目录
@@ -129,13 +135,95 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix 集成边界
 
+本仓库是一个 RoboNix **Skill 软件包** —— `robonix.skill.compute_optimization`。
+仓库根目录的 `package_manifest.yaml` 声明了五个能力约定，因此 `rbnx boot` 会拉起
+provider、Atlas 会完成注册、Pilot 的 LLM 可以直接用自然语言调用它。能力手册见
+[CAPABILITY.md](CAPABILITY.md)，配置字段见 [config.spec](config.spec)。
+
+| 提供的能力约定 | 传输 | 用途 |
+| --- | --- | --- |
+| `robonix/skill/compute_optimization/driver` | gRPC | 生命周期（`CMD_INIT` / `CMD_ACTIVATE` / …） |
+| `robonix/skill/compute_optimization/navigate` | MCP | 按指令启动导航，返回 `run_id` |
+| `robonix/skill/compute_optimization/navigate/status` | MCP | 轮询 `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
+| `robonix/skill/compute_optimization/navigate/cancel` | MCP | 中止当前任务（幂等） |
+| `robonix/skill/compute_optimization/telemetry` | MCP | 单次任务的同步/超时/复用/延迟计数 |
+
+观测输入与动作输出全部走标准约定，因此可以绑定到任何提供这些约定的 RoboNix
+机器人，本仓库不引入任何厂商 SDK：
+
+| 消费的能力约定 | 传输 | 作用 |
+| --- | --- | --- |
+| `robonix/primitive/camera/rgb` · `depth` · `intrinsics` | ROS 2 | 观测 |
+| `robonix/primitive/chassis/odom`（或 `robonix/service/map/pose`） | ROS 2 | 位姿 |
+| `robonix/primitive/chassis/move` | gRPC | 动作下发（`forward_m` / `rotate_deg`） |
+
+有两条边界是刻意保留的：
+
 | 本仓库已交付 | 边界 |
 | --- | --- |
-| 云端 S2 与端侧 S1 进程 | 独立于 RoboNix 核心运行 |
-| HTTP 生命周期 API | `/health`、`/setup`、`/reset`、`/step`、`/telemetry`、`/close` |
+| 云端 S2 进程 | 属于同一套运行时，不是独立软件包。它跑在机器人部署之外的 GPU 主机上，通过 `cloud_host` / `cloud_port` 寻址。端和云是一个整体：跨越两端的调度（何时值得取新 latent、等多久、迟到怎么处理）留在端侧，也就是本包里。 |
+| HTTP 生命周期 API | `/health`、`/setup`、`/reset`、`/step`、`/telemetry`、`/close` —— 为非 RoboNix 编排器保留。两条边界包裹的是同一个 `EdgeRuntime`。 |
 | WebSocket 云端—端侧传输 | 示例传输，不代替生产级鉴权和加密 |
 | InternNav 适配器 | 上游模型 API 不进入 RoboNix 核心 |
-| 运行时遥测 | 通过结果文件与 HTTP telemetry endpoint 暴露 |
+
+### 两条执行路径，同一套运行时
+
+计算运行时有两种被消费的方式，形态并不相同。区分清楚很重要，因为只有其中一条产出
+上面那些 benchmark 数字。
+
+| 路径 | 谁拥有 episode 循环 | 仿真器在哪 | 用途 |
+| --- | --- | --- | --- |
+| **Benchmark**（`robonix-compute-habitat-eval`） | InternNav evaluator | 在云端进程内，与 S2 同处 | 复现 R2R-CE 结果。evaluator 拥有 `env.reset` / `env.step`、episode 迭代和 SR/SPL 指标；边端通过 WebSocket 应答 S1 请求。 |
+| **机器人**（`robonix.skill.compute_optimization`） | 本 skill | 没有仿真器 —— 真实机器人 | 跑在 RoboNix 部署上。skill 拥有循环，读相机与底盘约定，下发 `chassis/move`。 |
+
+Benchmark 路径刻意保持原样。重新实现它的循环会让已发表的 SR/SPL 变成从我们的循环
+算出来的，而不是 InternNav 经过验证的 harness，因此那条路径一行不改，本仓库只提供
+接入其中的计算运行时。
+
+### 在部署中使用 skill
+
+```yaml
+# robonix_manifest.yaml
+skill:
+  - name: compute_optimization
+    url: https://github.com/i6bimua/RoboNix-Compute-Optimization-Skill
+    branch: main
+    config:
+      mode: internnav          # 建议先用 `mock`：纯 CPU、无需权重
+      cloud_host: 10.0.0.2
+      cloud_port: 8765
+      step_size_m: 0.25        # 必须与底盘 primitive 的增量一致
+      turn_angle_deg: 15.0
+```
+
+```bash
+robonix-compute-cloud --mode internnav --port 8765   # 在 GPU 主机上
+rbnx build -f robonix_manifest.yaml                  # 内部执行 rbnx codegen --mcp
+rbnx boot  -f robonix_manifest.yaml
+rbnx tools                                           # 四个 MCP 工具出现
+rbnx chat                                            # “走过走廊，在厨房门口停下”
+```
+
+Skill 在 boot 后保持 `INACTIVE` 是设计使然：`CMD_INIT` 只做配置校验，Executor 在
+第一次调用时才下发 `CMD_ACTIVATE`，那时才加载权重、建立云端连接。
+
+`step_size_m` 与 `turn_angle_deg` 必须等于底盘 primitive 自己的增量。`chassis/move`
+携带请求的幅值，一个规范的 primitive 会拒绝偏离过大的命令，而不是走一段和策略认知
+不同的距离。
+
+### 没有硬件时怎么验证部署
+
+[tests/harness/](tests/harness/) 里有一个合成机体（`mock_robot`）和一份本地部署清单，
+因此 `rbnx boot` 和完整的 skill 往返可以在没有仿真器、没有权重、没有 GPU 的机器上跑通
+—— 只需要 ROS 2。它验证的是接线：约定解析、图像解码、`chassis/move` 往返、惰性激活、
+状态轮询、取消。它的帧是合成梯度，所以不反映任何导航质量。
+
+无 root 时，ROS 2 可以通过 RoboStack 装进 conda 环境：
+
+```bash
+conda create -n rbnx-ros -c robostack-staging -c conda-forge python=3.11 \
+    ros-humble-ros-base ros-humble-sensor-msgs ros-humble-nav-msgs ros-humble-geometry-msgs
+```
 
 <a id="validated-scope"></a>
 ## 🧪 验证范围
