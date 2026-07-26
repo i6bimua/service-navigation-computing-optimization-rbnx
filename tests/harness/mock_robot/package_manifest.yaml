@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: MulanPSL-2.0
+#
+# mock_robot — synthetic robot body for verifying this skill's Atlas wiring.
+#
+# NOT A PUBLISHED PACKAGE. This manifest exists so `rbnx boot` can bring the
+# fixture up as a deployment instance; it is deliberately absent from
+# syswonder/robonix-package-catalog. The catalog only reads the manifest at a
+# repository root, so a nested one like this is invisible to it.
+#
+# What it is for: exercising the compute-optimization skill end to end — contract
+# resolution, image decode, chassis/move dispatch, lifecycle — on a machine with
+# no simulator and no checkpoints. The frames it publishes carry no semantic
+# content, so nothing measured against it says anything about navigation
+# quality. Benchmark numbers come from the InternNav Habitat harness, which owns
+# its own episode loop and metrics.
+#
+# Every capability below is a GLOBAL contract from the robonix source tree
+# (capabilities/primitive/{camera,chassis}/...), so no `path:` is needed and no
+# new interface enters the ecosystem.
+#
+# Motion model: chassis/move is burst-style, matching a step-discrete body --
+#   MoveCommand.forward_m  > 0  -> move_forward
+#   MoveCommand.rotate_deg > 0  -> turn_left   (counter-clockwise)
+#   MoveCommand.rotate_deg < 0  -> turn_right
+# One RPC advances the body once and republishes the new observation.
+manifestVersion: 1
+
+package:
+  name: "robonix.primitive.testing.mock_robot"
+  version: "0.1.0"
+  description: Synthetic robot body used to verify the compute-optimization skill's wiring; not a published package.
+  license: "MulanPSL-2.0"
+  tags: [primitive, testing, fixture, camera, chassis]
+  maintainers:
+    - "Hangyu Cao <3087918372@qq.com>"
+
+build: bash scripts/build.sh
+start: bash scripts/start.sh
+stop: bash scripts/stop.sh
+
+# `camera/driver` is deliberately absent. robonix-api binds ONE lifecycle
+# servicer, for `<provider namespace>/driver`, and a deployment gives a package
+# exactly one provider identity (RBNX_INSTANCE_NAME overrides every Primitive in
+# the process). So this fixture serves the chassis Driver and would only be
+# advertising a dead capability by listing the camera one. See the comment at
+# the top of mock_robot/main.py.
+capabilities:
+  - name: robonix/primitive/camera/rgb
+  - name: robonix/primitive/camera/depth
+  - name: robonix/primitive/camera/intrinsics
+  - name: robonix/primitive/chassis/driver
+  - name: robonix/primitive/chassis/odom
+  - name: robonix/primitive/chassis/move
+
+depends: []

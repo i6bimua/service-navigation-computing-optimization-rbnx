@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MulanPSL-2.0
+#
+# Soma robot ontology for the local verification deployment.
+#
+# What Pilot reads to decide whether a request is physically possible for this
+# body before it picks a skill. The `cannot_do` list matters as much as
+# `can_do`: it is what stops the LLM from planning a motion the discrete action
+# space has no way to express.
+
+urdf:
+  path: ./mock_robot.urdf
+  root_link: mock_robot_base
+  model_name: mock_robot
+
+robot:
+  id: mock_robot
+  display_name: "Mock robot (wiring fixture)"
+  family: synthetic_navigator
+  root_part: body
+  dimensions: { length_m: 0.2, width_m: 0.2, height_m: 1.5 }
+  footprint:
+    base_frame: mock_robot_base
+    points:
+      - [0.1, 0.1]
+      - [0.1, -0.1]
+      - [-0.1, -0.1]
+      - [-0.1, 0.1]
+
+description:
+  summary: >
+    A synthetic body used to verify the compute-optimization skill's wiring. It
+    publishes RGB-D and odometry and moves in fixed discrete increments: 0.25 m
+    forward or 15 degrees of in-place rotation. The frames carry no semantic
+    content, so nothing observed here reflects real navigation.
+  can_do:
+    - "Observe RGB, depth, and camera intrinsics."
+    - "Step forward 0.25 m, or turn in place by 15 degrees."
+    - "Report where it is in the odometry frame."
+  cannot_do:
+    - "Move backward, sideways, or vertically — the discrete action space has no such action."
+    - "Move by an arbitrary distance or turn by an arbitrary angle; only fixed increments."
+    - "Accept continuous velocity commands."
+    - "Manipulate, grasp, or carry anything — there is no arm or gripper."
+    - "See anything real: the frames are synthetic gradients, not a scene."

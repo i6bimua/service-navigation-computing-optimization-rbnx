@@ -1,0 +1,140 @@
+# SPDX-License-Identifier: MulanPSL-2.0
+#
+# HABITAT VERIFICATION DEPLOYMENT — not a published robot.
+#
+# Same as robonix_manifest.yaml but the body pulls REAL MP3D-CE frames instead of
+# synthetic gradients. Start the Habitat bridge first (it owns habitat.Env in the
+# py3.9 Habitat env, because rclpy cannot be installed there):
+#
+#   cd internnav-thor-codeonly/workspace/InternNav
+#   INTERNNAV_HABITAT_DATA_ROOT=<data> PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+#     <habitat-env>/bin/python <repo>/tests/harness/habitat_bridge/serve.py \
+#     --port 8799 --root . --root <tree holding vis_analyze_new>
+#
+# Still a harness: it exercises the skill against real imagery and makes no
+# metric claims. SR/SPL come from InternNav's evaluator.
+#
+# Brings up the compute-optimization skill against the synthetic mock_robot body
+# so the whole Robonix path can be exercised on a machine with no simulator, no
+# checkpoints and no GPU: contract declaration and resolution, ROS image decode,
+# chassis/move gRPC round-trip, lazy skill activation, status polling, cancel.
+#
+# What this does NOT do: measure navigation. mock_robot's frames carry no
+# semantic content. Benchmark numbers (R2R-CE SR/SPL, step latency) come from the
+# InternNav Habitat harness, which owns its own episode loop and metrics —
+# see the repository README.
+#
+# Bring-up (from this directory):
+#   # 1. Cloud S2. `mock` is CPU-only and needs no weights.
+#   robonix-compute-cloud --mode mock --port 8765 &
+#   # 2. Deployment. Needs rclpy: source a ROS 2 overlay, or set ROS_PYTHON to a
+#   #    RoboStack env interpreter (see ../mock_robot/scripts/start.sh).
+#   rbnx build -f robonix_manifest.yaml
+#   rbnx boot  -f robonix_manifest.yaml
+#   rbnx caps -v      # mock_robot ACTIVE, compute_optimization INACTIVE
+#   rbnx tools        # the four robonix/skill/compute_optimization/* tools
+#   rbnx chat         # "walk down the hallway and stop at the kitchen door"
+#   rbnx shutdown -f robonix_manifest.yaml
+#
+# INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
+# compute_optimization.step_size_m / turn_angle_deg. The body rejects a command
+# more than 50% off its own increment rather than silently travelling a different
+# distance. tests/unit/test_rbnx_contract_closure.py asserts this.
+manifestVersion: 1
+name: robonix-compute-optimization-habitat-verification
+
+catalog:
+  name: robonix.robot.testing.compute_optimization_habitat
+  version: "0.1.0"
+  description: Local verification deployment driving the compute-optimization skill against real Habitat imagery through the bridge; not a published robot.
+  license: "MulanPSL-2.0"
+  tags: [robot, deploy, testing, fixture, cloud-edge]
+  maintainers:
+    - "Hangyu Cao <3087918372@qq.com>"
+
+env:
+  # No Zenoh router here, so keep every ROS 2 process on the same
+  # peer-to-peer middleware.
+  RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+  ROS_DOMAIN_ID: "0"
+  # Passed through from the caller's shell (rbnx expands ${VAR} against its own
+  # environment, then exports the result to every package process). Both
+  # start.sh scripts use it to pick a ROS-capable interpreter, which matters
+  # when ROS 2 lives in a conda environment rather than /opt/ros:
+  #     export ROS_PYTHON="$HOME/miniconda3/envs/rbnx-ros/bin/python"
+  # Leave it unset to fall back to /opt/ros/$ROS_DISTRO + python3.
+  ROS_PYTHON: ${ROS_PYTHON}
+
+# atlas + executor + soma only. Pilot and liaison are deliberately absent: they
+# exist to turn natural language into skill calls, and pilot refuses to start
+# without VLM credentials. This harness verifies the contract plumbing, which
+# needs no LLM — so `rbnx boot` here works with zero credentials configured.
+#
+# To also exercise `rbnx chat`, add the two blocks below and export
+# VLM_BASE_URL / VLM_API_KEY / VLM_MODEL first:
+#
+#   pilot:
+#     listen: 127.0.0.1:50071
+#     log: info
+#     vlm:
+#       upstream: ${VLM_BASE_URL}
+#       api_key: ${VLM_API_KEY}
+#       model: ${VLM_MODEL}
+#       api_format: openai
+#   liaison:
+#     listen: 127.0.0.1:50081
+#     log: info
+system:
+  atlas:
+    listen: 127.0.0.1:50051
+    log: info
+  # The executor is what fires CMD_ACTIVATE on a skill's first MCP call and
+  # polls navigate/status to a terminal state, so it is required here.
+  executor:
+    listen: 127.0.0.1:50061
+    log: info
+  soma:
+    listen: 127.0.0.1:50091
+    robot_yaml: soma.yaml
+
+primitive:
+  - name: mock_robot
+    path: ../mock_robot
+    config:
+      # Real MP3D-CE frames, pulled from ../habitat_bridge/serve.py running in
+      # the Habitat env. Start that first; the body refuses to activate without
+      # it. Geometry (640x480, hfov 79) comes from the episode's own sensor
+      # config, so image_width / hfov_deg here are unused.
+      backend: habitat_bridge
+      bridge_host: 127.0.0.1
+      bridge_port: 8799
+      # These MUST equal Habitat's own action space, which the real config
+      # reports as forward_step_size=0.25 and turn_angle=15.
+      step_size_m: 0.25
+      turn_angle_deg: 15.0
+      sensor_hz: 10.0
+
+skill:
+  # Skills stay INACTIVE after boot; the executor activates this one on the
+  # first MCP call, which is when the cloud link opens.
+  - name: compute_optimization
+    path: ../../..
+    config:
+      # `mock` is CPU-only and needs no checkpoints. `internnav` additionally
+      # needs InternNav importable, a CUDA device and the InternVLA-N1 weights.
+      mode: mock
+      cloud_host: 127.0.0.1
+      cloud_port: 8765
+      # Must match mock_robot above.
+      step_size_m: 0.25
+      turn_angle_deg: 15.0
+      # Both point at the one fixture instance here. On a real robot the camera
+      # and chassis are separate primitives with different names, and binding
+      # them explicitly is what stops the skill picking the wrong one once a
+      # deployment has more than one candidate per contract.
+      camera_provider_id: mock_robot
+      chassis_provider_id: mock_robot
+      use_map_pose: false
+      max_steps: 200
+      timeout_s: 300.0
+      action_steps_to_execute: 0

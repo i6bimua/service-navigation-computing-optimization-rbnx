@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!-- SPDX-License-Identifier: MulanPSL-2.0 -->
+<!--
+  Synthetic body model for the wiring fixture.
+
+  A cylinder with one camera mount — no articulation. Dimensions match the
+  common VLN default agent (0.1 m radius, 1.5 m tall, sensor at 1.25 m) so the
+  footprint Pilot reasons about is realistic.
+
+  The camera frame carries the standard optical-frame rotation, so that
+  `mock_robot_camera` is x-right / y-down / z-forward as image consumers expect,
+  while `mock_robot_base` is REP-103 (x forward, y left, z up) like the odometry
+  the primitive publishes.
+-->
+<robot name="mock_robot">
+  <link name="mock_robot_base">
+    <visual>
+      <origin xyz="0 0 0.75" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.1" length="1.5"/>
+      </geometry>
+      <material name="mock_robot_teal">
+        <color rgba="0.15 0.60 0.62 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.75" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.1" length="1.5"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="mock_robot_camera"/>
+  <joint name="mock_robot_base_to_camera" type="fixed">
+    <parent link="mock_robot_base"/>
+    <child link="mock_robot_camera"/>
+    <!-- Sensor height 1.25 m; optical-frame rotation (-90 deg roll, -90 deg yaw). -->
+    <origin xyz="0 0 1.25" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+</robot>
