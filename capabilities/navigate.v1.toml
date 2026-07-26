@@ -1,0 +1,24 @@
+# robonix/skill/compute_optimization/navigate — vision-language navigation from a natural
+# language instruction.
+#
+# User-invocable atomic intent: "walk down the hallway, turn left at the
+# painting and stop by the kitchen door". The skill closes the loop itself
+# (observe RGB-D + pose -> cloud S2 semantic latent -> edge S1 discrete
+# action -> chassis/move) rather than delegating to a navigation service:
+# VLN grounds the instruction in the live visual stream, so there is no
+# metric goal pose to hand to a planner.
+#
+# Returns immediately with a run_id; callers poll the sibling status
+# contract and abort via cancel.
+[contract]
+id      = "robonix/skill/compute_optimization/navigate"
+version = "1"
+kind    = "skill"
+idl     = "compute_optimization/srv/Navigate.srv"
+description = "Navigate by following a natural-language instruction using dual-system vision-language navigation."
+
+[mode]
+type = "rpc"
+
+[semantics]
+user_invocable = true

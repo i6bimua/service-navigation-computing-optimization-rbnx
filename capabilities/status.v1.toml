@@ -1,0 +1,18 @@
+# robonix/skill/compute_optimization/navigate/status — poll progress of a running navigation.
+#
+# The executor polls this every ~2s until `state` reaches a terminal value
+# (SUCCEEDED | FAILED | CANCELED | TIMEOUT); anything else is treated as
+# RUNNING, so the provider MUST emit those exact words. Pilot also calls it
+# between rounds to decide whether to keep waiting or move on.
+[contract]
+id      = "robonix/skill/compute_optimization/navigate/status"
+version = "1"
+kind    = "skill"
+idl     = "compute_optimization/srv/GetNavigateStatus.srv"
+description = "Read the state and step progress of a navigation run."
+
+[mode]
+type = "rpc"
+
+[semantics]
+user_invocable = true

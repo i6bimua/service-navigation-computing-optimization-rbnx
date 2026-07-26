@@ -1,0 +1,8 @@
+# robonix/skill/compute_optimization/navigate/cancel — abort the currently running navigation.
+#
+# Empty run_id = cancel whatever is active. Idempotent: cancelling an
+# already-finished run is ok=true with a "no-op" message.
+string run_id
+---
+bool ok
+string message

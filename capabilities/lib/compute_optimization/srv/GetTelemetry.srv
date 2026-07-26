@@ -1,0 +1,16 @@
+# robonix/skill/compute_optimization/telemetry — cloud-edge compute optimization measurements.
+#
+# Every field below maps 1:1 onto
+# robonix_compute.common.telemetry.TelemetryRecorder.summary(); `summary_json`
+# carries the same mapping verbatim plus the full per-step log so nothing is
+# lost to the flat IDL. Empty run_id = the most recent run.
+string run_id
+---
+bool known
+uint32 steps                    # summary.step_count
+uint32 sync_count               # steps that requested a fresh cloud latent
+uint32 timeout_count            # steps where the cloud response missed its deadline
+uint32 late_absorbed_count      # late cloud responses promoted from the pending slot
+uint32 latent_reuse_count       # steps that reused the active latent
+float32 mean_step_latency_ms    # summary.mean_step_latency_s x 1000; 0 when unmeasured
+string summary_json             # full TelemetryRecorder.to_dict() as JSON

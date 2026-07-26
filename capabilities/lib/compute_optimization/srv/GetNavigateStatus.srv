@@ -1,0 +1,14 @@
+# robonix/skill/compute_optimization/navigate/status — poll a navigation run.
+#
+# Empty run_id means "the most recent run" so callers that only ever run one
+# navigation at a time do not have to track ids.
+string run_id
+---
+bool known                    # false if no run with that id
+string state                  # PENDING | RUNNING | SUCCEEDED | FAILED | CANCELED | TIMEOUT
+uint32 steps_executed         # control steps completed so far
+uint32 actions_issued         # chassis/move commands issued so far
+float32 elapsed_s
+float32 mean_step_latency_ms  # rolling mean of per-step edge latency; 0 before the first step
+bool stop_predicted           # true once the policy emitted the STOP action
+string detail                 # human-readable

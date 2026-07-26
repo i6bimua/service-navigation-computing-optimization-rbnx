@@ -1,0 +1,18 @@
+# Lifecycle interface every skill MUST declare.
+#
+# `rbnx boot` sends Driver(CMD_INIT, config_json) against this contract after
+# the skill process registers with atlas, then STOPS — skills stay at
+# INACTIVE. The executor fires CMD_ACTIVATE just-in-time on the first MCP
+# call, which is when on_activate resolves the camera/chassis contracts and
+# builds the EdgeRuntime (model load, cloud connection, rclpy thread).
+#
+# Without this contract the on_init handler never fires and every MCP call
+# returns "skill not initialized".
+[contract]
+id      = "robonix/skill/compute_optimization/driver"
+version = "1"
+kind    = "skill"
+idl     = "lifecycle/srv/Driver.srv"
+
+[mode]
+type = "rpc"

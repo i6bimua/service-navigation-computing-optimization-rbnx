@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MulanPSL-2.0
+#
+# robonix.skill.compute_optimization — compute-optimized dual-system navigation.
+#
+# kind: skill (user-invocable atomic intent). Pilot/LLM calls
+# robonix/skill/compute_optimization/navigate("<instruction>") to start; the call returns a
+# run_id and status/cancel/telemetry are sibling MCP tools.
+#
+# Architecture: cloud S2 produces slow semantic latents, edge S1 produces
+# fast actions. The edge runtime decides per step whether a fresh latent is
+# needed (key-latent synchronization), buffers late cloud responses in a
+# pending slot, and bounds network stalls with adaptive timeout prediction.
+# See README.md for the measured R2R-CE numbers.
+#
+# The cloud S2 process is NOT a robonix package — it runs on a separate
+# machine (A100-class GPU) outside this robot deployment and is reached at
+# `cloud_host:cloud_port`. Same boundary as skill-vla-openvla-rbnx, whose
+# VLA server is likewise a config value rather than an atlas-routed
+# contract.
+#
+# Downstream (atlas-routed) dependencies, resolved lazily in on_activate:
+#   robonix/primitive/camera/rgb          (ros2, topic_out)  — observation
+#   robonix/primitive/camera/depth        (ros2, topic_out)  — observation
+#   robonix/primitive/camera/intrinsics   (ros2, topic_out)  — projection
+#   robonix/primitive/chassis/odom        (ros2, topic_out)  — pose
+#   robonix/primitive/chassis/move        (grpc, rpc)        — action output
+manifestVersion: 1
+
+package:
+  name: "robonix.skill.compute_optimization"
+  version: "0.2.0"
+  description: Compute-optimized dual-system navigation skill — cloud S2 semantic latents plus edge S1 action generation with adaptive cloud-edge synchronization.
+  license: "MulanPSL-2.0"
+  tags: [skill, compute-optimization, navigation, cloud-edge, dual-system, embodied-ai]
+  maintainers:
+    - "Hangyu Cao <3087918372@qq.com>"
+
+build: bash scripts/build.sh
+start: bash scripts/start.sh
+stop: bash scripts/stop.sh
+
+# Fixed capability surface. Everything declared on atlas at startup is
+# listed here; adding a capability means bumping the version and updating
+# robonix_compute/rbnx/provider.py.
+capabilities:
+  - name: robonix/skill/compute_optimization/driver
+    path: capabilities/driver.v1.toml
+  - name: robonix/skill/compute_optimization/navigate
+    path: capabilities/navigate.v1.toml
+  - name: robonix/skill/compute_optimization/navigate/status
+    path: capabilities/status.v1.toml
+  - name: robonix/skill/compute_optimization/navigate/cancel
+    path: capabilities/cancel.v1.toml
+  - name: robonix/skill/compute_optimization/telemetry
+    path: capabilities/telemetry.v1.toml
+
+depends: []
