@@ -19,7 +19,7 @@ private data, and sustained disruption of project collaboration.
 
 ## Enforcement
 
-Report conduct concerns privately to `3087918372@qq.com`. Maintainers may edit
+Report conduct concerns privately to `202330552461@mail.scut.edu.cn`. Maintainers may edit
 or remove comments, reject contributions, or restrict participation when
 necessary to protect the community.
 

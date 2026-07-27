@@ -1,19 +1,22 @@
+<!-- Written as HTML rather than Markdown inside the centering div on purpose:
+     the package catalog renders this file with Python-Markdown, which passes a
+     block-level HTML element through untouched and would otherwise publish the
+     Markdown between these tags as literal source text. -->
 <div align="center">
-
-# RoboNix Compute Optimization
-
-**An open-source compute optimization tool for RoboNix dual-system vision-language navigation**
-
-[简体中文](README.zh-CN.md) ·
-[🎬 Demo Video](#demo-video) ·
-[🏆 Benchmark Results](#benchmark-results) ·
-[Running Images](#running-images) ·
-[Quick Start](#quick-start)
-
-[![CI](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml)
-<br>
-[![Project metrics](docs/assets/result_badges.svg)](#benchmark-results)
-
+<h1>RoboNix Compute Optimization</h1>
+<p><strong>An open-source compute optimization tool for RoboNix dual-system vision-language navigation</strong></p>
+<p>
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="#demo-video">🎬 Demo Video</a> ·
+  <a href="#benchmark-results">🏆 Benchmark Results</a> ·
+  <a href="#running-images">Running Images</a> ·
+  <a href="#quick-start">Quick Start</a>
+</p>
+<p>
+  <a href="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml"><img src="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <br>
+  <a href="#benchmark-results"><img src="docs/assets/result_badges.svg" alt="Project metrics"></a>
+</p>
 </div>
 
 <a id="demo-video"></a>
@@ -109,11 +112,18 @@ in [Benchmark Results](#benchmark-results).
 <a id="news"></a>
 ## 📰 News
 
-- **2026-07-27 — v0.3.1:** This service is the whole entry point for
-  natural-language navigation: pilot discovers its MCP contracts directly and
-  the executor drives the `navigate` / `status` / `cancel` group, so nothing
-  needs to be deployed alongside it to forward calls. Docs and the reference
-  deployment updated accordingly; no contract change. See
+- **2026-07-27 — v0.4.0:** Two safety and liveness fixes, both breaking.
+  `config.mode` is now required — it used to default to `mock`, so an
+  unconfigured deployment silently got a stub policy that reported runs as
+  `SUCCEEDED` without navigating and could still move a real chassis — and a
+  stub backend now has to opt in with `allow_stub_actions: true`, in which case
+  `chassis/move` is never called at all. A `navigate` that cannot start now
+  fails the call instead of returning `accepted=false`, and an unknown run
+  reports `FAILED` instead of `PENDING`, so an asynchronous caller polling the
+  `navigate` / `status` / `cancel` group always reaches a terminal state. This
+  service is also the whole entry point for natural-language navigation: pilot
+  discovers its MCP contracts directly and the executor drives that group, so
+  nothing needs to be deployed alongside it to forward calls. See
   [CHANGELOG.md](CHANGELOG.md).
 - **2026-07-27 — v0.3.0:** Re-published as a **service** —
   `robonix.service.navigation.vln`, the instruction-following sibling of
@@ -244,7 +254,7 @@ service:
     url: https://github.com/i6bimua/service-navigation-vln-rbnx
     branch: main
     config:
-      mode: internnav          # `mock` first: CPU-only, no checkpoints
+      mode: internnav          # required, no default; the only backend that navigates
       cloud_host: 10.0.0.2
       cloud_port: 8765
       step_size_m: 0.25        # must match the chassis primitive's increments
@@ -261,10 +271,10 @@ rbnx tools                                           # the four MCP tools appear
 
 #### Why the model does not load at boot
 
-`rbnx boot` sends both `CMD_INIT` and `CMD_ACTIVATE` to a service — lazy
-activation is a skill property, gated by `rbnx` and the executor on a
-`robonix/skill` namespace. Activation runs after every primitive is ACTIVE, so
-`on_activate` binds the camera, pose and chassis contracts and nothing more.
+`rbnx boot` sends both `CMD_INIT` and `CMD_ACTIVATE` to a service, so it is
+activated during bring-up rather than on its first call. Activation runs after
+every primitive is ACTIVE, so `on_activate` binds the camera, pose and chassis
+contracts and nothing more.
 
 The checkpoints and the cloud link are acquired on the **first `navigate` call**.
 Doing that work at boot would make GPU memory and a reachable cloud host
@@ -272,8 +282,9 @@ boot-time requirements of every deployment that merely lists this package, and a
 unreachable cloud S2 host would fail the whole boot rather than one call.
 
 So `ACTIVE` here means *bound to the robot*, not *ready to navigate*; a
-checkpoint or cloud problem is reported by `navigate` as `accepted=false` with a
-diagnosis. `status`, `cancel` and `telemetry` answer without the runtime.
+checkpoint or cloud problem makes the `navigate` call itself fail, with the
+diagnosis in the error. `status`, `cancel` and `telemetry` answer without the
+runtime.
 
 `step_size_m` and `turn_angle_deg` must equal the chassis primitive's own
 increments. `chassis/move` carries the requested magnitude, and a well-behaved
@@ -1100,7 +1111,7 @@ Contribution rules are in `CONTRIBUTING.md`; release history is in
 ## 🤝 Contributors
 
 - **Zihao Zheng** ([@zhengzihaoPKU](https://github.com/zhengzihaoPKU)) — Leader.
-- **Hangyu Cao** ([@i6bimua](https://github.com/i6bimua)) — Maintainer.
+- **Seto** ([@i6bimua](https://github.com/i6bimua)) — Maintainer.
 
 <a id="citation"></a>
 ## 📝 Citation
@@ -1113,7 +1124,7 @@ and citing it:
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.3.1},
+  version = {0.4.0},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```

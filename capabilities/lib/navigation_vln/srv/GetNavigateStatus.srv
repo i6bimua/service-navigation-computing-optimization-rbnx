@@ -1,11 +1,16 @@
 # robonix/service/navigation/vln/navigate/status — poll a navigation run.
 #
-# Empty run_id means "the most recent run" so callers that only ever run one
-# navigation at a time do not have to track ids.
+# Empty run_id means "the run that is still active", so a caller running one
+# navigation at a time does not have to track ids. It never resolves to a run
+# that has already finished: reporting an earlier run's state as if it were this
+# caller's is worse than reporting that nothing is active.
 string run_id
 ---
 bool known                    # false if no run with that id
 string state                  # PENDING | RUNNING | SUCCEEDED | FAILED | CANCELED | TIMEOUT
+                              # An unknown run reports FAILED, never PENDING: an id
+                              # that is unknown now stays unknown, and PENDING would
+                              # ask a polling caller to wait for it forever.
 uint32 steps_executed         # control steps completed so far
 uint32 actions_issued         # chassis/move commands issued so far
 float32 elapsed_s

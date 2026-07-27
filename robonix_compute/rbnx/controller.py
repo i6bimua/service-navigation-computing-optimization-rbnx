@@ -173,7 +173,7 @@ class NavigationController:
         return run
 
     def status(self, run_id: str | None = None) -> dict[str, Any] | None:
-        run = self._lookup(run_id)
+        run = self._lookup(run_id, active_only=True)
         if run is None:
             return None
         with self._lock:
@@ -192,8 +192,14 @@ class NavigationController:
             }
 
     def cancel(self, run_id: str | None = None) -> tuple[bool, str]:
-        run = self._lookup(run_id)
+        run = self._lookup(run_id, active_only=True)
         if run is None:
+            # Aborting is idempotent, so "there is nothing running" is a
+            # successful no-op rather than an error — an unwind path that cancels
+            # twice, or cancels after the run finished on its own, should not
+            # look like a failure. A wrong id is still an error.
+            if not run_id:
+                return True, "no-op: no navigation run is active"
             return False, "no navigation run with that id"
         with self._lock:
             if run.is_terminal:
@@ -234,10 +240,21 @@ class NavigationController:
         return stragglers
 
     # -- internals ---------------------------------------------------------
-    def _lookup(self, run_id: str | None) -> NavigationRun | None:
+    def _lookup(self, run_id: str | None, *, active_only: bool = False) -> NavigationRun | None:
+        """Resolve a run id. An empty id means "the obvious run", which for
+        `active_only` callers is the one still running and nothing else.
+
+        Status and cancel pass `active_only` so that an empty id can never
+        resolve to an unrelated run that has already finished: reporting a
+        previous run's state as if it belonged to this caller is worse than
+        reporting that nothing is active.
+        """
         with self._lock:
             if run_id:
                 return self._runs.get(run_id)
+            if active_only:
+                live = [r for r in self._runs.values() if not r.is_terminal]
+                return live[0] if len(live) == 1 else None
             if self._latest_run_id is None:
                 return None
             return self._runs.get(self._latest_run_id)

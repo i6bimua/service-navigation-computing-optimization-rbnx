@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robonix-compute-optimization"
-version = "0.3.1"
+version = "0.4.0"
 description = "RoboNix service package for instruction-following navigation on a compute-optimized dual-system runtime"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MulanPSL-2.0"
 license-files = ["LICENSE", "NOTICE"]
-authors = [{ name = "Hangyu Cao", email = "3087918372@qq.com" }]
+authors = [{ name = "Seto", email = "202330552461@mail.scut.edu.cn" }]
 keywords = ["robonix", "embodied-ai", "vln", "navigation", "compute-optimization", "edge-inference"]
 classifiers = [
   "Development Status :: 3 - Alpha",

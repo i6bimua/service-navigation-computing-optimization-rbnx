@@ -8,11 +8,19 @@ from __future__ import annotations
 
 from typing import Any
 
-VALID_MODES = ("mock", "websocket", "internnav")
+# `mock` and `websocket` both run `_mock_s1`, whose action is the argmax of the
+# latent and ignores the instruction entirely. They exercise the transport and
+# the contract surface; they do not navigate. Only `internnav` runs a trained
+# policy, so it is the only backend whose actions may reach a chassis.
+STUB_ACTION_MODES = ("mock", "websocket")
+PRODUCTION_MODES = ("internnav",)
+VALID_MODES = STUB_ACTION_MODES + PRODUCTION_MODES
 
 DEFAULTS: dict[str, Any] = {
-    # compute backend
-    "mode": "mock",
+    # Compute backend. Deliberately absent from the defaults: a deployment that
+    # does not name a backend must not silently get a stub one, because a stub
+    # backend reports runs as SUCCEEDED without having navigated.
+    "allow_stub_actions": False,
     "cloud_host": "127.0.0.1",
     "cloud_port": 8765,
     "model_dir": "checkpoints/InternVLA-N1",
@@ -66,10 +74,28 @@ def parse_config(cfg: dict[str, Any] | None) -> tuple[dict[str, Any], str | None
     merged = dict(DEFAULTS)
     merged.update(cfg or {})
 
-    mode = str(merged["mode"]).strip().lower()
+    raw_mode = merged.get("mode")
+    mode = str(raw_mode).strip().lower() if raw_mode is not None else ""
+    if not mode:
+        return merged, (
+            "config.mode is required and has no default. Use mode: internnav for a "
+            f"deployment that navigates, or one of {list(STUB_ACTION_MODES)} together "
+            "with allow_stub_actions: true for a test deployment — a stub backend "
+            "never drives chassis/move."
+        )
     if mode not in VALID_MODES:
-        return merged, f"config.mode must be one of {VALID_MODES}, got {merged['mode']!r}"
+        return merged, f"config.mode must be one of {VALID_MODES}, got {raw_mode!r}"
     merged["mode"] = mode
+
+    merged["allow_stub_actions"] = bool(merged.get("allow_stub_actions", False))
+    if mode in STUB_ACTION_MODES and not merged["allow_stub_actions"]:
+        return merged, (
+            f"config.mode={mode} runs a stub edge policy: the action is read off the "
+            "latent and the instruction is ignored, so the run cannot navigate and a "
+            "STOP prediction does not mean arrival. Set allow_stub_actions: true to "
+            "run it anyway as a test deployment, in which case chassis/move is never "
+            "called, or use mode: internnav to navigate for real."
+        )
 
     for key in _POSITIVE_FLOATS:
         try:

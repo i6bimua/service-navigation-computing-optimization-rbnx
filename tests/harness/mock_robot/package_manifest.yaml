@@ -32,7 +32,7 @@ package:
   license: "MulanPSL-2.0"
   tags: [primitive, testing, fixture, camera, chassis]
   maintainers:
-    - "Hangyu Cao <3087918372@qq.com>"
+    - "Seto <202330552461@mail.scut.edu.cn>"
 
 build: bash scripts/build.sh
 start: bash scripts/start.sh

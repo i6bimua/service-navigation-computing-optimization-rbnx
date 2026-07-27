@@ -47,7 +47,7 @@ catalog:
   license: "MulanPSL-2.0"
   tags: [robot, deploy, testing, fixture, cloud-edge]
   maintainers:
-    - "Hangyu Cao <3087918372@qq.com>"
+    - "Seto <202330552461@mail.scut.edu.cn>"
 
 env:
   # No Zenoh router here, so keep every ROS 2 process on the same
@@ -122,9 +122,12 @@ service:
   - name: navigation_vln
     path: ../../..
     config:
-      # `mock` is CPU-only and needs no checkpoints. `internnav` additionally
-      # needs InternNav importable, a CUDA device and the InternVLA-N1 weights.
+      # `mock` is CPU-only and needs no checkpoints, but it runs the stub edge
+      # policy, so it cannot navigate — hence the explicit opt-in, which also
+      # disconnects the motion sink from chassis/move. A deployment that should
+      # actually navigate sets `mode: internnav` and drops allow_stub_actions.
       mode: mock
+      allow_stub_actions: true
       cloud_host: 127.0.0.1
       cloud_port: 8765
       # Must match mock_robot above.

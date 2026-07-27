@@ -198,12 +198,35 @@ def test_cancel_unknown_run():
     assert controller.cancel("copt-nope") == (False, "no navigation run with that id")
 
 
-def test_empty_run_id_addresses_the_most_recent_run():
+def test_an_empty_run_id_never_reports_a_finished_run_as_the_current_one():
+    """Status and cancel resolve an empty id to the run that is still active,
+    and to nothing once it has finished.
+
+    Falling back to the most recent run let an empty id — which is what a caller
+    holds when a start was refused — silently pick up an unrelated earlier run
+    and report its state as this caller's. Telemetry keeps the convenience,
+    since reading counters after a run is its whole purpose and it drives no
+    control flow.
+    """
     controller, _ = make_controller(FakeCompute([ACTION_STOP]))
     run = controller.start(instruction="latest")
     await_terminal(controller, run.run_id)
-    assert controller.status(None)["run_id"] == run.run_id
+
+    assert controller.status(None) is None
+    assert controller.cancel(None) == (True, "no-op: no navigation run is active")
+    assert controller.status(run.run_id)["run_id"] == run.run_id
     assert controller.telemetry(None)["run_id"] == run.run_id
+
+
+def test_an_empty_run_id_addresses_the_active_run_while_it_runs():
+    compute = FakeCompute([ACTION_MOVE_FORWARD] * 1000, step_hook=lambda _: time.sleep(0.01))
+    controller, _ = make_controller(compute, defaults=RunLimits(timeout_s=30.0, max_steps=10_000))
+    run = controller.start(instruction="still going")
+    try:
+        assert controller.status(None)["run_id"] == run.run_id
+    finally:
+        controller.cancel(run.run_id)
+        await_terminal(controller, run.run_id)
 
 
 def test_status_of_unknown_run_is_none():

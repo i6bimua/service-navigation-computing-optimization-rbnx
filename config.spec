@@ -3,28 +3,42 @@
 # This file documents the mapping passed as this package's `config:` value in
 # a deployment `robonix_manifest.yaml`, delivered to on_init through
 # Driver(CMD_INIT, config_json). It is documentation only — the provider does
-# not load this file. An empty `config: {}` uses every default below, which
-# yields the CPU-only `mock` backend (useful for verifying the contract
-# surface without checkpoints or a cloud GPU).
+# not load this file. `mode` has no default and must be set; every other field
+# below falls back to the default shown. An empty `config: {}` is therefore
+# rejected at CMD_INIT — see `mode` for why.
 #
 # Defaults mirror configs/defaults/robonix_compute.yaml; see README.md for
 # how each switching parameter affects the latency/accuracy trade-off.
 
 config:
   # ── Compute backend ────────────────────────────────────────────────────
-  # string enum, default: mock. Selects how S1 and S2 are realised.
-  #   mock      — in-process stub S1/S2, no checkpoints, no network. The
-  #               contract surface is fully exercised but actions are
-  #               meaningless. Use this to smoke-test a deployment.
-  #   websocket — real cloud S2 over the WebSocket transport, stub edge S1.
-  #               Isolates transport behaviour from model behaviour.
-  #   internnav — real InternVLA-N1 dual-system. Requires checkpoints under
-  #               model_dir / s1_model_dir, a CUDA device, and InternNav
-  #               importable. These are NOT checked at CMD_INIT or
-  #               CMD_ACTIVATE: the runtime is built on the first navigate
-  #               call, so anything missing is reported there as
-  #               accepted=false with a diagnosis, and boot still succeeds.
-  mode: mock
+  # string enum, REQUIRED — there is deliberately no default. A deployment
+  # that names no backend is rejected at CMD_INIT rather than silently given a
+  # stub one, because a stub backend reports runs as SUCCEEDED without having
+  # navigated anywhere.
+  #   internnav — real InternVLA-N1 dual-system, and the only backend that
+  #               navigates. Requires checkpoints under model_dir /
+  #               s1_model_dir, a CUDA device, and InternNav importable. Those
+  #               are NOT checked at CMD_INIT or CMD_ACTIVATE: the runtime is
+  #               built on the first navigate call, so anything missing is
+  #               reported there and boot still succeeds.
+  #   websocket — real cloud S2 over the WebSocket transport, but a stub edge
+  #               S1. Isolates transport behaviour from model behaviour.
+  #               TEST ONLY — requires allow_stub_actions: true.
+  #   mock      — in-process stub S1/S2, no checkpoints, no network. Exercises
+  #               the whole contract surface on a laptop.
+  #               TEST ONLY — requires allow_stub_actions: true.
+  mode:
+
+  # bool, default: false. Must be set true to use mode mock or websocket.
+  # Both run the stub edge policy, which reads its action off the latent and
+  # ignores the instruction: the robot would move for no reason and the run
+  # would still finish SUCCEEDED. Opting in is what distinguishes a test
+  # deployment from a production one that was left unconfigured. With a stub
+  # backend the service never calls robonix/primitive/chassis/move at all —
+  # its motion sink has no connection to the chassis — so steps and telemetry
+  # are still reported while the robot stays put.
+  allow_stub_actions: false
 
   # ── Cloud System-2 endpoint ────────────────────────────────────────────
   # Edge and cloud are one system, not two packages: the cloud process is this

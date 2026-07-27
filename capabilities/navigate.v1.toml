@@ -13,10 +13,11 @@
 # Returns immediately with a run_id; callers poll the sibling status contract
 # and abort via cancel. One run at a time.
 #
-# LLM-facing invocation belongs to the thin `robonix/skill/navigation/vln/*`
-# wrapper, which delegates here. Only a skill namespace earns pilot's `[skill]`
-# tag, and that tag is what tells the model to read CAPABILITY.md before driving
-# a start -> poll -> cancel sequence.
+# A start that cannot be accepted fails the call rather than returning
+# `accepted=false`. Declaring the status and cancel siblings makes this an async
+# group, and an async caller reads a run id out of any successful response and
+# polls it — so a refusal has to be a failure, or that caller is left polling a
+# run that will never exist.
 [contract]
 id      = "robonix/service/navigation/vln/navigate"
 version = "1"

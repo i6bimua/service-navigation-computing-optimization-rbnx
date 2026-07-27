@@ -76,13 +76,13 @@ class RecordingChassis:
 def compute():
     """Real compute runtime on the mock backend, torn down after each test."""
     core = RoboNixComputeSkill()
-    core.setup(parse_config({"mode": "mock"})[0])
+    core.setup(parse_config({"mode": "mock", "allow_stub_actions": True})[0])
     yield core
     core.close()
 
 
 def _controller(compute, observations, chassis, **limit_kwargs):
-    config, error = parse_config({"mode": "mock"})
+    config, error = parse_config({"mode": "mock", "allow_stub_actions": True})
     assert error is None
     limits = RunLimits(timeout_s=10.0, max_steps=20)
     for key, value in limit_kwargs.items():

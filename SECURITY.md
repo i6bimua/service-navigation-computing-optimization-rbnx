@@ -5,7 +5,7 @@
 Do not open a public issue for a vulnerability that may expose a robot,
 network service, credential, private dataset, or deployment host.
 
-Report the issue to `3087918372@qq.com` with:
+Report the issue to `202330552461@mail.scut.edu.cn` with:
 
 - affected version or commit;
 - deployment mode and reachable interface;

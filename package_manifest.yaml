@@ -40,12 +40,12 @@ manifestVersion: 1
 
 package:
   name: "robonix.service.navigation.vln"
-  version: "0.3.1"
+  version: "0.4.0"
   description: Instruction-following navigation service — cloud S2 semantic latents plus edge S1 action generation with adaptive cloud-edge synchronization.
   license: "MulanPSL-2.0"
   tags: [service, navigation, vln, compute-optimization, cloud-edge, dual-system, embodied-ai]
   maintainers:
-    - "Hangyu Cao <3087918372@qq.com>"
+    - "Seto <202330552461@mail.scut.edu.cn>"
 
 build: bash scripts/build.sh
 start: bash scripts/start.sh

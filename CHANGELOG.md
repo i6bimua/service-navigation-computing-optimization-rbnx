@@ -2,9 +2,64 @@
 
 All notable public changes are recorded here.
 
-## 0.3.1 — 2026-07-27
+## 0.4.0 — 2026-07-27
 
-Documentation and reference-deployment only; no contract or runtime change.
+Closes two defects found by reading this service against the executor's async
+dispatch and against what an unconfigured deployment would actually do. Contract
+ids and IDL shapes are unchanged, so the capability version stays `1`, but both
+fixes change observable behaviour and one of them makes a previously accepted
+config invalid — hence the minor bump rather than a patch.
+
+### Changed — BREAKING
+
+- `config.mode` is now **required and has no default**. It used to default to
+  `mock`, which meant a deployment entry of `config: {}` silently got a stub edge
+  policy: `_mock_s1` reads its action off the latent and ignores the instruction,
+  so runs finished `SUCCEEDED` without having navigated, and a non-STOP stub
+  action was handed to `robonix/primitive/chassis/move` on whatever robot was
+  wired up. An unconfigured production deployment could therefore report a
+  successful navigation and move for no reason. A deployment that named no
+  backend is now rejected at `CMD_INIT`.
+- a stub backend has to say it is one, and cannot drive a chassis. `mock` and
+  `websocket` both run `_mock_s1` — only `internnav` runs a trained policy — so
+  both now require `allow_stub_actions: true`, and with either of them the
+  controller is built with a motion sink that holds no reference to the chassis
+  stub. Steps and telemetry are still reported, so the contract surface stays
+  testable on a laptop, while `chassis/move` is never called. Update an existing
+  test deployment by adding `allow_stub_actions: true` next to `mode: mock`; a
+  real one by setting `mode: internnav`.
+- `navigate` **fails the call** when a run cannot start, instead of returning
+  `accepted=false` with an empty `run_id`. `navigate`, `navigate/status` and
+  `navigate/cancel` form an async contract group, and an async caller treats a
+  completed call as a started run: it reads the run id out of the response and
+  polls `status` until that run reports a terminal state. A refusal returned as a
+  value satisfied that first step, so the caller was left polling a run that
+  never existed. The `accepted` field is kept for compatibility and is now always
+  `true`. No correct consumer could have relied on `accepted=false`, since it
+  produced exactly this failure — which is why the capability version does not
+  change.
+- `navigate/status` reports an unknown run as `state=FAILED` rather than
+  `PENDING`, and an empty `run_id` now resolves only to a run that is still
+  active. `PENDING` is not a terminal state and a run id that is unknown now
+  stays unknown, so answering `PENDING` asked a polling caller to wait for it
+  indefinitely. Resolving an empty id to the most recent run also let a caller
+  holding no id — which is what a refused start left it with — read an unrelated
+  earlier run's state as its own. `navigate/cancel` is likewise active-only, and
+  answers "nothing is active" as a successful no-op so that an unwind path that
+  cancels twice does not look like a failure. `telemetry` keeps resolving an
+  empty id to the most recent run: reading counters after a run is its purpose
+  and it drives no control flow.
+
+### Added
+
+- `tests/integration/test_executor_rejection.py` boots a real deployment, submits
+  an RTDL plan through the real executor's `execute` contract, and asserts the
+  `navigate` node reaches `FAILED` with the cause in its error. Asserting on the
+  provider's reply alone would have missed this entirely, because the defect was
+  in what the executor did with that reply. Skipped without a robonix source
+  tree; the module docstring has the command.
+- `tests/unit/test_rbnx_provider_guards.py` covers the same two invariants plus
+  the motion-sink choice without needing a deployment.
 
 ### Changed
 
@@ -30,6 +85,15 @@ Documentation and reference-deployment only; no contract or runtime change.
   executor keys on the namespace; `rbnx boot` keys on which manifest section an
   instance is declared in. The conclusion — a service is activated during boot,
   so `on_activate` must not load the model — is unaffected.
+- both README headers are written as HTML inside their centering `<div>` rather
+  than as Markdown. The package catalog renders these files with
+  Python-Markdown, which passes a block-level HTML element through untouched, so
+  the title, the language switch and the badges were published on the catalog
+  page as literal Markdown source. GitHub renders either form.
+- the maintainer credit is now `Seto`, and the contact address for security
+  reports, conduct reports and issue triage is `202330552461@mail.scut.edu.cn`.
+  `CITATION.cff` and the BibTeX snippet keep the authors' real names, which is
+  what a citation needs.
 
 ## 0.3.0 — 2026-07-27
 

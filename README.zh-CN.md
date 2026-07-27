@@ -1,19 +1,21 @@
+<!-- 这里用 HTML 而非 Markdown 是有意为之：包目录站用 Python-Markdown 渲染本文件，
+     它会把块级 HTML 元素整体原样透出，若在这两个标签之间写 Markdown，
+     目录页上就会直接显示成源码。 -->
 <div align="center">
-
-# RoboNix Compute Optimization
-
-**面向 RoboNix 双系统视觉语言导航的开源计算优化工具**
-
-[English](README.md) ·
-[🎬 演示视频](#demo-video) ·
-[🏆 Benchmark 结果](#benchmark-results) ·
-[运行图片](#running-images) ·
-[快速开始](#quick-start)
-
-[![CI](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml)
-<br>
-[![项目指标](docs/assets/result_badges.svg)](#benchmark-results)
-
+<h1>RoboNix Compute Optimization</h1>
+<p><strong>面向 RoboNix 双系统视觉语言导航的开源计算优化工具</strong></p>
+<p>
+  <a href="README.md">English</a> ·
+  <a href="#demo-video">🎬 演示视频</a> ·
+  <a href="#benchmark-results">🏆 Benchmark 结果</a> ·
+  <a href="#running-images">运行图片</a> ·
+  <a href="#quick-start">快速开始</a>
+</p>
+<p>
+  <a href="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml"><img src="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <br>
+  <a href="#benchmark-results"><img src="docs/assets/result_badges.svg" alt="项目指标"></a>
+</p>
 </div>
 
 <a id="demo-video"></a>
@@ -98,7 +100,7 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="news"></a>
 ## 📰 项目动态
 
-- **2026-07-27 — v0.3.1：**自然语言导航只需要本 service 这一个入口：pilot 直接发现它的 MCP 契约，`navigate` / `status` / `cancel` 这组异步契约的轮询由 executor 驱动，因此不需要在旁边再部署任何转发用的包。文档与参考部署据此更新，契约未变。详见 [CHANGELOG.md](CHANGELOG.md)。
+- **2026-07-27 — v0.4.0：**两处安全性与活性修复，均为破坏性变更。`config.mode` 改为必填 —— 它此前默认为 `mock`，意味着一个未配置的部署会静默拿到桩策略：既会把没有真正导航的运行报成 `SUCCEEDED`，还可能驱动真实底盘 —— 而桩后端现在必须以 `allow_stub_actions: true` 显式声明，此时根本不会调用 `chassis/move`。无法启动的 `navigate` 现在让该次调用失败，而不再返回 `accepted=false`；未知的运行返回 `FAILED` 而非 `PENDING`，因此轮询 `navigate` / `status` / `cancel` 这组异步契约的调用方总能到达终态。此外，自然语言导航只需要本 service 这一个入口：pilot 直接发现它的 MCP 契约，上述契约组的轮询由 executor 驱动，因此不需要在旁边再部署任何转发用的包。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-27 — v0.3.0：**改为以 **service** 身份发布 —— `robonix.service.navigation.vln`，即 `robonix.service.navigation`（Nav2）的指令跟随版兄弟。所有契约 ID 都变了，因此这是一个破坏性版本；契约 ID 对照表、以及为什么计算运行时改为首次调用时加载而不是 boot 时加载，见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-25 — v0.2.0：**成为可发布的 RoboNix 包 `robonix.skill.compute_optimization`：五个能力契约、注册到 Atlas 并暴露四个 MCP 工具的 provider（惰性激活）、离散动作到 `chassis/move` 的映射，以及无需硬件的接线夹具。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-19 — v0.1.0：**发布公开运行时、InternVLA-N1 DualVLN 适配器、HTTP Skill 边界、结构化 R2R-CE 结果包、授权数据门禁、严格模型/环境预检和双语复现流程。
@@ -203,7 +205,7 @@ service:
     url: https://github.com/i6bimua/service-navigation-vln-rbnx
     branch: main
     config:
-      mode: internnav          # 建议先用 `mock`：纯 CPU、无需权重
+      mode: internnav          # 必填、无默认值；唯一真正会导航的后端
       cloud_host: 10.0.0.2
       cloud_port: 8765
       step_size_m: 0.25        # 必须与底盘 primitive 的增量一致
@@ -220,16 +222,16 @@ rbnx tools                                           # 四个 MCP 工具出现
 
 #### 为什么模型不在 boot 时加载
 
-`rbnx boot` 会对 service 连续下发 `CMD_INIT` 和 `CMD_ACTIVATE` —— 惰性激活是 skill
-的属性，`rbnx` 和 executor 都以 `robonix/skill` 命名空间为判据。激活发生在所有
-primitive 均已 ACTIVE 之后，所以 `on_activate` 只做一件事：绑定相机、位姿、底盘约定。
+`rbnx boot` 会对 service 连续下发 `CMD_INIT` 和 `CMD_ACTIVATE`，也就是说 service 在
+启动阶段就被激活，而不是等到第一次调用。激活发生在所有 primitive 均已 ACTIVE 之后，
+所以 `on_activate` 只做一件事：绑定相机、位姿、底盘约定。
 
 权重和云端连接是在**第一次 `navigate` 调用**时才获取的。若放在 boot 里做，GPU 显存
 和可达的云端主机就会变成「任何只是列出了本包的部署」的启动前置条件，而云端 S2
 主机不可达会让整个 boot 失败，而不只是一次调用失败。
 
 因此这里 `ACTIVE` 的含义是「已绑定到机器人」，而不是「已可导航」；权重或云端的问题
-会由 `navigate` 以 `accepted=false` 加诊断信息返回。`status`、`cancel`、`telemetry`
+会让 `navigate` 这次调用本身失败，诊断信息就在报错里。`status`、`cancel`、`telemetry`
 在没有运行时的情况下也能应答。
 
 `step_size_m` 与 `turn_angle_deg` 必须等于底盘 primitive 自己的增量。`chassis/move`
@@ -1001,7 +1003,7 @@ python3 -m build
 ## 🤝 贡献者
 
 - **Zihao Zheng**（[@zhengzihaoPKU](https://github.com/zhengzihaoPKU)）— Leader。
-- **Hangyu Cao**（[@i6bimua](https://github.com/i6bimua)）— Maintainer。
+- **Seto**（[@i6bimua](https://github.com/i6bimua)）— Maintainer。
 
 <a id="citation"></a>
 ## 📝 引用
@@ -1013,7 +1015,7 @@ python3 -m build
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.3.1},
+  version = {0.4.0},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```

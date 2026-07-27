@@ -37,13 +37,14 @@ from __future__ import annotations
 import json
 import logging
 import threading
-from typing import Any
+from collections.abc import Callable
+from typing import Any, NoReturn
 
 from robonix_api import ATLAS, Deferred, Err, Ok, Service
 from robonix_api.atlas_types import Transport
 
 from robonix_compute.rbnx.action_bridge import MotionCommand, send_move_command, strip_scheme
-from robonix_compute.rbnx.config import parse_config
+from robonix_compute.rbnx.config import STUB_ACTION_MODES, parse_config
 from robonix_compute.rbnx.controller import RunLimits, NavigationController
 from robonix_compute.rbnx.observation import ObservationBuffer
 
@@ -243,6 +244,28 @@ def _motion_sink(motion: MotionCommand) -> str:
     )
 
 
+def _discarded_motion_sink(motion: MotionCommand) -> str:
+    """The motion sink a stub backend gets: counts the command, sends nothing.
+
+    `mock` and `websocket` read their action off the latent and ignore the
+    instruction, so the commands are arbitrary with respect to the task. This
+    sink has no reference to the chassis stub, which is what keeps an arbitrary
+    command from reaching a real robot; the run still steps and reports so the
+    contract surface stays testable without hardware.
+    """
+    log.info("stub backend: %s not sent to %s", motion.action_name, MOVE_CONTRACT)
+    return "discarded: a stub backend does not drive a chassis"
+
+
+def _pick_motion_sink(mode: str) -> Callable[[MotionCommand], str]:
+    """Which sink the controller gets, decided by the backend alone.
+
+    Named rather than inlined so the choice is assertable without building a
+    runtime: sending stub actions to a real chassis is the failure this guards.
+    """
+    return _discarded_motion_sink if mode in STUB_ACTION_MODES else _motion_sink
+
+
 def _build_compute_core() -> Any:
     """Construct the compute runtime from this package's existing wrapper.
 
@@ -258,6 +281,21 @@ def _build_compute_core() -> Any:
     return core
 
 
+def _reject(message: str) -> NoReturn:
+    """Refuse to start a run, as a failed tool call rather than a return value.
+
+    The executor treats a completed MCP round-trip as a successful dispatch: it
+    reads `run_id` out of the reply and then polls `navigate/status` with it
+    until that run reports a terminal state. A rejection expressed as
+    `accepted=false` with an empty `run_id` satisfies that first step, so the
+    executor would start polling a run that never existed and never terminates.
+    Raising makes the tool call itself fail, which the executor turns into a
+    failed RTDL node carrying this message.
+    """
+    log.warning("navigate rejected: %s", message)
+    raise RuntimeError(message)
+
+
 # ── MCP tools ───────────────────────────────────────────────────────────────
 @service.mcp("robonix/service/navigation/vln/navigate")
 def navigate(req: Navigate_Request) -> Navigate_Response:
@@ -266,18 +304,21 @@ def navigate(req: Navigate_Request) -> Navigate_Response:
     Call this when the user describes a route in words rather than naming a
     known map goal. Returns immediately with a run_id; poll status with that
     run_id to follow progress, and cancel to abort. Only one navigation run
-    can be active at a time."""
+    can be active at a time.
+
+    A start that cannot be accepted raises instead of answering
+    `accepted=false`: see `_reject` for why the distinction matters to the
+    executor. A returned response therefore always carries a live `run_id`.
+    """
     # First call pays for the checkpoints and the cloud link; later calls are a
     # flag check. Deliberately not done in on_activate — see the module
     # docstring.
     unavailable = _ensure_compute_ready()
     if unavailable is not None:
-        return Navigate_Response(accepted=False, run_id="", message=unavailable)
+        _reject(unavailable)
     controller = _state.controller
     if controller is None:
-        return Navigate_Response(
-            accepted=False, run_id="", message="controller unavailable after setup reported success"
-        )
+        _reject("controller unavailable after setup reported success")
 
     buffer = _state.observations
     if buffer is not None:
@@ -287,11 +328,7 @@ def navigate(req: Navigate_Request) -> Navigate_Response:
             require_intrinsic=True,
         )
         if gaps:
-            return Navigate_Response(
-                accepted=False,
-                run_id="",
-                message=f"observation not ready: no {', '.join(gaps)} received from the deployment",
-            )
+            _reject(f"observation not ready: no {', '.join(gaps)} received from the deployment")
 
     try:
         run = controller.start(
@@ -300,29 +337,35 @@ def navigate(req: Navigate_Request) -> Navigate_Response:
             max_steps=int(req.max_steps),
         )
     except RuntimeError as exc:
-        return Navigate_Response(accepted=False, run_id="", message=str(exc))
+        _reject(str(exc))
     return Navigate_Response(accepted=True, run_id=run.run_id, message="navigation started")
 
 
 @service.mcp("robonix/service/navigation/vln/navigate/status")
 def navigate_status(req: GetNavigateStatus_Request) -> GetNavigateStatus_Response:
-    """Poll a navigation run. Empty run_id means the most recent run. `state`
-    is one of PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED, TIMEOUT."""
+    """Poll a navigation run. Empty run_id means the run that is still active.
+    `state` is one of PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED, TIMEOUT."""
     # No _ensure_compute_ready() here: polling must answer "unknown run" without
-    # loading a model. The executor polls this every 2s, including right after a
-    # navigate call that was itself rejected.
+    # loading a model.
     controller = _state.controller
     snapshot = controller.status(req.run_id or None) if controller is not None else None
     if snapshot is None:
+        # FAILED, not PENDING. A poller that is told PENDING keeps polling,
+        # because PENDING is not a terminal state, and an id that is unknown now
+        # will stay unknown — so PENDING here is a request to loop forever.
         return GetNavigateStatus_Response(
             known=False,
-            state="PENDING",
+            state="FAILED",
             steps_executed=0,
             actions_issued=0,
             elapsed_s=0.0,
             mean_step_latency_ms=0.0,
             stop_predicted=False,
-            detail="no navigation run with that id",
+            detail=(
+                f"no navigation run with id {req.run_id!r}"
+                if req.run_id
+                else "no navigation run is active"
+            ),
         )
     return GetNavigateStatus_Response(
         known=True,
@@ -483,10 +526,12 @@ def _ensure_compute_ready() -> str | None:
             )
 
         assert _state.observations is not None
+        mode = str(_state.config["mode"])
+        stub_backend = mode in STUB_ACTION_MODES
         _state.controller = NavigationController(
             compute=_state.compute,
             observations=_state.observations,
-            motion_sink=_motion_sink,
+            motion_sink=_pick_motion_sink(mode),
             step_size_m=float(_state.config["step_size_m"]),
             turn_angle_deg=float(_state.config["turn_angle_deg"]),
             defaults=RunLimits(
@@ -496,7 +541,11 @@ def _ensure_compute_ready() -> str | None:
             ),
         )
         _state.active = True
-    log.info("compute runtime ready — controller running (mode=%s)", _state.config["mode"])
+    log.info(
+        "compute runtime ready — controller running (mode=%s, chassis/move %s)",
+        _state.config["mode"],
+        "disabled: stub backend" if stub_backend else "live",
+    )
     return None
 
 

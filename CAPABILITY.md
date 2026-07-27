@@ -43,15 +43,21 @@ background.
 | `timeout_s`   | float  | 0       | Wall-clock ceiling for the whole run. `0` = use `config.timeout_s` (300 s).               |
 | `max_steps`   | uint32 | 0       | Control-step ceiling. `0` = use `config.max_steps` (500).                                 |
 
-Returns `{accepted, run_id, message}`. `accepted=false` when a run is already
-active, the compute runtime could not be brought up, or the observation inputs
-have not produced a frame yet — `message` says which. The runtime is loaded on
-the first `navigate`, so a checkpoint or cloud-link problem surfaces here rather
-than at boot.
+Returns `{accepted, run_id, message}` with a live `run_id`. A start that cannot
+be accepted — a run is already active, the compute runtime could not be brought
+up, or the observation inputs have not produced a frame yet — **fails the call**
+and the error names which. It is not reported as `accepted=false`, because an
+asynchronous caller that treats a completed call as a started run would then be
+holding a run id that never resolves. The `accepted` field is kept for
+compatibility and is now always `true`.
+
+The runtime is loaded on the first `navigate`, so a checkpoint or cloud-link
+problem surfaces as one of those failures rather than at boot.
 
 ### `robonix/service/navigation/vln/navigate/status`
 
-Poll a run. Empty `run_id` means the most recent run.
+Poll a run. Empty `run_id` means the run that is still active; it never resolves
+to a run that has already finished.
 
 Returns `{known, state, steps_executed, actions_issued, elapsed_s,
 mean_step_latency_ms, stop_predicted, detail}`.
@@ -66,6 +72,10 @@ mean_step_latency_ms, stop_predicted, detail}`.
 | `FAILED`    | Step limit hit without STOP, policy/compute error, or a chassis command error. |
 | `CANCELED`  | Cancelled via the cancel contract, or the provider was deactivated.           |
 | `TIMEOUT`   | `timeout_s` elapsed.                                                          |
+
+A run id this service does not know reports `known=false` with `state=FAILED`,
+never `PENDING`: an id that is unknown now stays unknown, so `PENDING` would ask
+a polling caller to keep waiting for it indefinitely.
 
 Note that `SUCCEEDED` means *the policy decided it arrived*, not that arrival
 was independently verified. This service carries no goal-checker; verifying
@@ -107,8 +117,8 @@ gone; a large `timeout_count` means the cloud link is the bottleneck.
 3. `cancel` to abort early.
 4. Optionally read `telemetry` afterwards.
 
-Do **not** call `navigate` again while a run is active — the second call is
-rejected. Do not run this service alongside anything else that drives the same
+Do **not** call `navigate` again while a run is active — the second call fails.
+Do not run this service alongside anything else that drives the same
 chassis (`service/navigation/navigate`, `skill/explore` — which itself delegates
 to Nav2): both would issue motion commands and fight for the chassis. Enable one
 motion-owning stack at a time in the deploy manifest.
@@ -209,7 +219,8 @@ likely to need changing per deployment:
 
 | key                       | default                 | meaning                                                                    |
 |---------------------------|-------------------------|----------------------------------------------------------------------------|
-| `mode`                    | `mock`                  | `mock` (no checkpoints, contract smoke test), `websocket`, `internnav`.     |
+| `mode`                    | **required**            | `internnav` to navigate; `mock` / `websocket` are test backends.             |
+| `allow_stub_actions`      | `false`                 | Must be `true` to use a test backend. See below.                            |
 | `cloud_host` / `cloud_port` | `127.0.0.1` / `8765`  | Cloud S2 endpoint.                                                          |
 | `step_size_m`             | `0.25`                  | Metres per `MOVE_FORWARD`. Must match the checkpoint's action semantics.     |
 | `turn_angle_deg`          | `15.0`                  | Degrees per turn. Must match the checkpoint's action semantics.              |
@@ -217,19 +228,27 @@ likely to need changing per deployment:
 | `action_steps_to_execute` | `0` (whole chunk)       | Set `1` for the tightest closed loop.                                       |
 | `use_map_pose`            | `false`                 | `true` swaps chassis odom for SLAM-corrected `service/map/pose`.             |
 
-`mode: mock` is the recommended first boot: it exercises every contract,
-lifecycle transition and the whole action path on CPU with no checkpoints and
-no cloud GPU. Its actions are meaningless by construction, so expect the run
-to end quickly — that verifies wiring, not navigation quality.
+`mode` has no default on purpose. Only `internnav` navigates; `mock` and
+`websocket` both run a stub edge policy that reads its action off the latent and
+ignores the instruction, so their runs still report `SUCCEEDED` without having
+gone anywhere. A deployment that named no backend used to be given `mock`
+silently, which is how an unconfigured production robot could report a
+successful navigation.
+
+So a test backend has to say so, with `allow_stub_actions: true`, and when it
+does this service **never calls `chassis/move`** — the controller is built with a
+motion sink that holds no connection to the chassis. That makes `mode: mock` a
+good first boot for checking wiring: it exercises every contract, every
+lifecycle transition and the whole action path on CPU with no checkpoints and no
+cloud GPU, while the robot stays still. It verifies wiring, not navigation.
 
 ## Lifecycle
 
 Declare this under `service:` in the deployment manifest, with the instance
 `name: navigation_vln` to match `Service(id=…)`.
 
-`rbnx boot` sends `CMD_INIT` and then `CMD_ACTIVATE` — services are activated
-eagerly, unlike skills, whose just-in-time activation both `rbnx` and the
-executor gate on a `robonix/skill` namespace. Activation happens after soma
+`rbnx boot` sends `CMD_INIT` and then `CMD_ACTIVATE`: a service is activated
+during bring-up rather than on its first call. Activation happens after soma
 stage 1, so every primitive is already ACTIVE when the camera and chassis
 contracts are resolved.
 
@@ -241,7 +260,8 @@ that merely lists this package, and an unreachable cloud host would fail the
 boot instead of the call.
 
 `status`, `cancel` and `telemetry` answer without that runtime — polling a run
-that was never started reports `known=false` rather than loading a model.
+that was never started reports `known=false` with `state=FAILED` rather than
+loading a model.
 
 ## Calling this from an LLM
 

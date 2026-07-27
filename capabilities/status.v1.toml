@@ -7,9 +7,12 @@
 # the cancel sibling is what makes `navigate` async to the executor — declaring
 # only one is a configuration error it rejects at dispatch.
 #
-# Answers without a loaded runtime: polling must report "unknown run" even when
-# the compute core has never been built, because the executor polls right after
-# a navigate call that was itself rejected.
+# Answers without a loaded runtime: polling reports an unknown run even when the
+# compute core has never been built, rather than loading a model to answer.
+#
+# An unknown run reports FAILED, not PENDING. PENDING is not terminal, and a run
+# id that is unknown now stays unknown, so PENDING would keep the poll loop above
+# running with nothing left to wait for.
 [contract]
 id      = "robonix/service/navigation/vln/navigate/status"
 version = "1"
