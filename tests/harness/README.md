@@ -10,7 +10,7 @@ the intent explicit.
 | Directory | Package name | What it is |
 |---|---|---|
 | [mock_robot/](mock_robot/) | `robonix.primitive.testing.mock_robot` | A synthetic body: publishes RGB-D + odometry, accepts `chassis/move` |
-| [deployment/](deployment/) | `robonix.robot.testing.compute_optimization_harness` | A local `robonix_manifest.yaml` wiring the body to the skill |
+| [deployment/](deployment/) | `robonix.robot.testing.navigation_vln_harness` | A local `robonix_manifest.yaml` wiring the body to the service |
 
 ## What this verifies, and what it does not
 
@@ -64,9 +64,9 @@ rbnx build -f robonix_manifest.yaml
 rbnx boot  -f robonix_manifest.yaml
 
 # 3. Inspect (another terminal)
-rbnx caps -v      # mock_robot ACTIVE, compute_optimization INACTIVE
-rbnx tools        # the four robonix/skill/compute_optimization/* tools
-rbnx describe --provider compute_optimization
+rbnx caps -v      # mock_robot and navigation_vln both ACTIVE
+rbnx tools        # the four robonix/service/navigation/vln/* tools
+rbnx describe --provider navigation_vln
 
 # 4. Drive it
 rbnx chat         # "walk down the hallway and stop at the kitchen door"
@@ -75,12 +75,13 @@ rbnx chat         # "walk down the hallway and stop at the kitchen door"
 rbnx shutdown -f robonix_manifest.yaml
 ```
 
-`compute_optimization` staying `INACTIVE` after boot is correct, not a fault:
-skills only receive `CMD_INIT` at boot and the executor sends `CMD_ACTIVATE` on
-the first MCP call.
+`navigation_vln` reaching `ACTIVE` during boot is correct: services are
+activated by `rbnx boot` itself, unlike skills, whose just-in-time activation is
+gated on a `robonix/skill` namespace. ACTIVE here means the camera and chassis
+contracts are bound — the compute runtime still loads on the first `navigate`.
 
 Expect the run to end quickly. In `mode: mock` the stub policy emits `STOP`
-almost immediately, which the skill correctly reports as `SUCCEEDED` — that
+almost immediately, which the service correctly reports as `SUCCEEDED` — that
 confirms the loop and the terminal-state path, not that anywhere was reached.
 
 ## Tests
@@ -90,7 +91,7 @@ construction; it runs as part of the repository suite (see
 `mock_robot/conftest.py`) and skips its provider half when `robonix_api` or the
 codegen output is absent.
 
-The cross-contract round trip — skill's `MoveCommand` back into a discrete
-action, including turn sign — lives in the skill's own suite at
+The cross-contract round trip — the service's `MoveCommand` back into a discrete
+action, including turn sign — lives in the service's own suite at
 `tests/unit/test_rbnx_contract_closure.py`, because that is the assertion the
 skill must not regress.

@@ -1,6 +1,6 @@
 <div align="center">
 
-# RoboNix Compute Optimization Skill
+# RoboNix Compute Optimization
 
 **An open-source compute optimization tool for RoboNix dual-system vision-language navigation**
 
@@ -10,7 +10,7 @@
 [Running Images](#running-images) ·
 [Quick Start](#quick-start)
 
-[![CI](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml)
+[![CI](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml)
 <br>
 [![Project metrics](docs/assets/result_badges.svg)](#benchmark-results)
 
@@ -25,20 +25,20 @@
   </a>
 </div>
 
-RoboNix Compute Optimization Skill provides RoboNix with an external, measured
+RoboNix Compute Optimization provides RoboNix with an external, measured
 compute optimization module for dual-system VLN. Slow semantic reasoning runs
 on a cloud GPU, while latency-sensitive action generation stays on the edge.
 The tool combines asynchronous execution, key-latent synchronization,
 active/pending context buffering, adaptive timeout handling, and per-step
 telemetry.
 
-**Project boundary.** This repository is a publishable RoboNix Skill package
-(`robonix.skill.compute_optimization`): it ships `package_manifest.yaml`,
+**Project boundary.** This repository is a publishable RoboNix **Service**
+package (`robonix.service.navigation.vln`): it ships `package_manifest.yaml`,
 its own capability contracts, and a provider that registers with Atlas and
 exposes four MCP tools. It does not modify RoboNix core — it consumes the
 standard camera and chassis contracts and adds no vendor SDK. The cloud S2 process
 is part of this same runtime rather than a separate package, and runs on a GPU
-host outside the robot deployment. The standalone HTTP Skill API remains available for
+host outside the robot deployment. The standalone HTTP API remains available for
 orchestrators that are not RoboNix deployments. See
 [RoboNix Integration Boundary](#robonix-integration-boundary).
 
@@ -67,7 +67,7 @@ in [Benchmark Results](#benchmark-results).
 
 | Goal | Entry point | Required resources |
 | --- | --- | --- |
-| Run the skill on a RoboNix deployment | `rbnx build -f robonix_manifest.yaml && rbnx boot -f robonix_manifest.yaml` | A robot providing the camera and chassis contracts |
+| Run the service on a RoboNix deployment | `rbnx build -f robonix_manifest.yaml && rbnx boot -f robonix_manifest.yaml` | A robot providing the camera and chassis contracts |
 | Verify the runtime contract | `bash scripts/run_mock_compute.sh --steps 5` | CPU only; about one minute after installation |
 | Check real-model readiness | `robonix-compute-preflight ... --strict` | InternNav, Habitat, checkpoints, data, and free GPUs |
 | Reproduce a navigation run | `bash scripts/run_habitat_eval.sh` | Prepared R2R-CE/MP3D-CE environment |
@@ -79,7 +79,7 @@ in [Benchmark Results](#benchmark-results).
 - [Demo Video](#demo-video)
 - [News](#news)
 - [Results](#results)
-- [What the Skill Optimizes](#what-the-skill-optimizes)
+- [What the Runtime Optimizes](#what-the-runtime-optimizes)
 - [Architecture](#architecture)
 - [Running Images](#running-images)
 - [RoboNix Integration Boundary](#robonix-integration-boundary)
@@ -109,7 +109,12 @@ in [Benchmark Results](#benchmark-results).
 <a id="news"></a>
 ## 📰 News
 
-- **2026-07-25 — v0.2.0:** Became a publishable RoboNix skill package,
+- **2026-07-27 — v0.3.0:** Re-published as a **service** —
+  `robonix.service.navigation.vln`, the instruction-following sibling of
+  `robonix.service.navigation` (Nav2). Every contract id changed, so this is a
+  breaking release; see [CHANGELOG.md](CHANGELOG.md) for the mapping and for why
+  the compute runtime now loads on first call instead of at boot.
+- **2026-07-25 — v0.2.0:** Became a publishable RoboNix package,
   `robonix.skill.compute_optimization`: five capability contracts, an
   Atlas-registered provider with four MCP tools and lazy activation, the
   discrete-action to `chassis/move` mapping, and a hardware-free wiring harness.
@@ -118,8 +123,8 @@ in [Benchmark Results](#benchmark-results).
   adapter, HTTP Skill boundary, structured R2R-CE result package, licensed-data
   gate, strict model/environment preflight, and bilingual reproduction guide.
 
-<a id="what-the-skill-optimizes"></a>
-## 🧩 What the Skill Optimizes
+<a id="what-the-runtime-optimizes"></a>
+## 🧩 What the Runtime Optimizes
 
 | Mechanism | Runtime effect |
 | --- | --- |
@@ -162,21 +167,36 @@ memory, and optional diffusion latents remain behind adapters.
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix Integration Boundary
 
-This repository is a RoboNix **Skill package** — `robonix.skill.compute_optimization`.
+This repository is a RoboNix **Service package** — `robonix.service.navigation.vln`.
 `package_manifest.yaml` at the repository root declares five capability
-contracts, so `rbnx boot` starts the provider, Atlas registers it, and Pilot's
-LLM can invoke it from natural language. See [CAPABILITY.md](CAPABILITY.md) for
-the capability manual and [config.spec](config.spec) for every config field.
+contracts, so `rbnx boot` starts the provider and Atlas registers it. See
+[CAPABILITY.md](CAPABILITY.md) for the capability manual and
+[config.spec](config.spec) for every config field.
+
+It is the **instruction-following sibling of `robonix.service.navigation`**
+(Nav2): both own a long-running navigation runtime and expose the same
+navigate / status / cancel triple, but Nav2's goal is a metric `PoseStamped`
+while this one's is a sentence. A coordinate goes to Nav2; a route description
+comes here.
 
 | Contract | Transport | Purpose |
 | --- | --- | --- |
-| `robonix/skill/compute_optimization/driver` | gRPC | Lifecycle (`CMD_INIT` / `CMD_ACTIVATE` / …) |
-| `robonix/skill/compute_optimization/navigate` | MCP | Start a run from an instruction → `run_id` |
-| `robonix/skill/compute_optimization/navigate/status` | MCP | Poll `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
-| `robonix/skill/compute_optimization/navigate/cancel` | MCP | Abort the active run (idempotent) |
-| `robonix/skill/compute_optimization/telemetry` | MCP | Per-run sync / timeout / reuse / latency counters |
+| `robonix/service/navigation/vln/driver` | gRPC | Lifecycle (`CMD_INIT` / `CMD_ACTIVATE` / …) |
+| `robonix/service/navigation/vln/navigate` | MCP | Start a run from an instruction → `run_id` |
+| `robonix/service/navigation/vln/navigate/status` | MCP | Poll `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
+| `robonix/service/navigation/vln/navigate/cancel` | MCP | Abort the active run (idempotent) |
+| `robonix/service/navigation/vln/telemetry` | MCP | Per-run sync / timeout / reuse / latency counters |
 
-The skill consumes its observations and issues its actions through standard
+For natural-language invocation, deploy the thin
+[`robonix.skill.navigation.vln`](https://github.com/i6bimua/skill-navigation-vln-rbnx)
+wrapper alongside it. Pilot tags only `kind: skill` providers with `` `[skill]` ``,
+and that tag is what tells the LLM to read a CAPABILITY.md before its first
+call — which matters here, because `navigate` is a start → poll → cancel
+sequence rather than one request. The wrapper carries no runtime of its own: the
+S1/S2 models, the cloud link and the chassis connection stay in this service, and
+one copy of them exists per deployment regardless of the entry point used.
+
+The service consumes its observations and issues its actions through standard
 contracts, so it binds to any RoboNix robot that offers them — no vendor SDK
 enters this repository:
 
@@ -204,20 +224,21 @@ benchmark numbers above.
 | Path | Who owns the episode loop | Where the simulator is | What it is for |
 | --- | --- | --- | --- |
 | **Benchmark** (`robonix-compute-habitat-eval`) | The InternNav evaluator | Inside the cloud process, next to S2 | Reproducing the R2R-CE results. The evaluator owns `env.reset` / `env.step`, episode iteration and the SR/SPL metrics; the edge answers S1 requests over WebSocket. |
-| **Robot** (`robonix.skill.compute_optimization`) | This skill | No simulator — a real robot | Running on a RoboNix deployment. The skill owns the loop, reads the camera and chassis contracts, and issues `chassis/move`. |
+| **Robot** (`robonix.service.navigation.vln`) | This service | No simulator — a real robot | Running on a RoboNix deployment. The service owns the loop, reads the camera and chassis contracts, and issues `chassis/move`. |
 
 The benchmark path is deliberately left as it is. Re-implementing its loop would
 mean the published SR/SPL came from our loop rather than InternNav's validated
 harness, so it stays untouched and this repository only supplies the compute
 runtime that plugs into it.
 
-### Using the skill in a deployment
+### Using the service in a deployment
 
 ```yaml
 # robonix_manifest.yaml
-skill:
-  - name: compute_optimization
-    url: https://github.com/i6bimua/skill-compute-optimization-rbnx
+service:
+  # `name` must equal Service(id=...) in robonix_compute/rbnx/provider.py
+  - name: navigation_vln
+    url: https://github.com/i6bimua/service-navigation-vln-rbnx
     branch: main
     config:
       mode: internnav          # `mock` first: CPU-only, no checkpoints
@@ -231,13 +252,25 @@ skill:
 robonix-compute-cloud --mode internnav --port 8765   # on the GPU host
 rbnx build -f robonix_manifest.yaml                  # runs rbnx codegen --mcp
 rbnx boot  -f robonix_manifest.yaml
+rbnx caps -v                                         # navigation_vln ACTIVE
 rbnx tools                                           # the four MCP tools appear
-rbnx chat                                            # "walk down the hall and stop at the kitchen"
 ```
 
-Skills stay `INACTIVE` after boot by design: `CMD_INIT` only validates config,
-and the executor sends `CMD_ACTIVATE` on the first call, which is when
-checkpoints load and the cloud link opens.
+#### Why the model does not load at boot
+
+`rbnx boot` sends both `CMD_INIT` and `CMD_ACTIVATE` to a service — lazy
+activation is a skill property, gated by `rbnx` and the executor on a
+`robonix/skill` namespace. Activation runs after every primitive is ACTIVE, so
+`on_activate` binds the camera, pose and chassis contracts and nothing more.
+
+The checkpoints and the cloud link are acquired on the **first `navigate` call**.
+Doing that work at boot would make GPU memory and a reachable cloud host
+boot-time requirements of every deployment that merely lists this package, and an
+unreachable cloud S2 host would fail the whole boot rather than one call.
+
+So `ACTIVE` here means *bound to the robot*, not *ready to navigate*; a
+checkpoint or cloud problem is reported by `navigate` as `accepted=false` with a
+diagnosis. `status`, `cancel` and `telemetry` answer without the runtime.
 
 `step_size_m` and `turn_angle_deg` must equal the chassis primitive's own
 increments. `chassis/move` carries the requested magnitude, and a well-behaved
@@ -247,11 +280,11 @@ different distance than the policy believes it did.
 ### Verifying a deployment without hardware
 
 [tests/harness/](tests/harness/) holds a synthetic body (`mock_robot`) and a
-local deployment manifest, so `rbnx boot` and a full skill round-trip can be
+local deployment manifest, so `rbnx boot` and a full navigate round-trip can be
 exercised with no simulator, no checkpoints and no GPU — only ROS 2 is required.
 It verifies wiring: contract resolution, image decode, the `chassis/move`
-round-trip, lazy activation, status polling, cancel. Its frames are synthetic
-gradients, so it says nothing about navigation quality.
+round-trip, lifecycle transitions, status polling, cancel. Its frames are
+synthetic gradients, so it says nothing about navigation quality.
 
 Without root, ROS 2 can be installed into a conda environment via RoboStack:
 
@@ -311,8 +344,8 @@ metadata.
 This complete CPU path requires no model weights, simulator data, or GPU:
 
 ```bash
-git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
-cd skill-compute-optimization-rbnx
+git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
+cd service-navigation-vln-rbnx
 
 conda create -n robonix-compute python=3.10 -y
 conda activate robonix-compute
@@ -401,8 +434,8 @@ asset under its original license.
 ### 1.1 Create the environment
 
 ```bash
-git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
-cd skill-compute-optimization-rbnx
+git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
+cd service-navigation-vln-rbnx
 export ROBONIX_COMPUTE_ROOT="$(pwd)"
 
 conda create -n robonix-compute python=3.10 -y
@@ -925,13 +958,13 @@ MatterSim/object-grounding stack and is deliberately excluded here.
 ## 🗂️ Repository Layout
 
 ```text
-skill-compute-optimization-rbnx/
+service-navigation-vln-rbnx/
 ├── package_manifest.yaml          # RoboNix package surface read by rbnx and the catalog
 ├── CAPABILITY.md                  # Capability manual for Pilot's LLM
 ├── config.spec                    # Every config field, documented
 ├── capabilities/
 │   ├── *.v1.toml                  # The five contracts this package provides
-│   └── lib/compute_optimization/srv/   # ROS 2 IDL for the four MCP tools
+│   └── lib/navigation_vln/srv/    # ROS 2 IDL for the four MCP tools
 ├── .github/workflows/ci.yml       # Python matrix, CLI, docs, audit and build
 ├── robonix_compute/
 │   ├── benchmark_data.py          # Licensed dataset integrity checks
@@ -939,7 +972,7 @@ skill-compute-optimization-rbnx/
 │   ├── edge/                      # S1 runtime, switcher and timeout handling
 │   ├── common/                    # Messages, buffer, serialization and telemetry
 │   ├── eval/                      # Habitat adapter and strategy definitions
-│   ├── rbnx/                      # RoboNix Skill provider (Atlas-registered)
+│   ├── rbnx/                      # RoboNix Service provider (Atlas-registered)
 │   ├── robonix/                   # External HTTP Skill boundary
 │   └── cli/                       # robonix-compute-* commands
 ├── benchmarks/r2r_ce/
@@ -951,12 +984,12 @@ skill-compute-optimization-rbnx/
 ├── examples/                      # Mock and InternNav JSON configurations
 ├── scripts/                       # build/start/stop entry points, plus release checks
 └── tests/
-    ├── unit/ · integration/       # Coverage for the runtime and the skill boundary
+    ├── unit/ · integration/       # Coverage for the runtime and the service boundary
     └── harness/                   # Synthetic body + deployment manifests (not published)
 ```
 
 `robonix_compute/` is the canonical import-compatible implementation. Its two
-outward boundaries are `rbnx/` (the RoboNix Skill provider) and `robonix/` (the
+outward boundaries are `rbnx/` (the RoboNix Service provider) and `robonix/` (the
 standalone HTTP API); both wrap the same `EdgeRuntime`. The remaining top-level
 directories expose the benchmark, configuration and validation workflows.
 
@@ -1073,12 +1106,12 @@ If this Tool supports your work, please consider giving the repository a star
 and citing it:
 
 ```bibtex
-@software{robonix_compute_optimization_skill_2026,
+@software{robonix_compute_optimization_2026,
   author  = {Cao, Hangyu and Zheng, Zihao},
-  title   = {RoboNix Compute Optimization Skill},
+  title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.1.0},
-  url     = {https://github.com/i6bimua/skill-compute-optimization-rbnx}
+  version = {0.3.0},
+  url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```
 

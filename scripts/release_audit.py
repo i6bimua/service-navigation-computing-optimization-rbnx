@@ -92,10 +92,10 @@ REQUIRED_PATHS = {
     "capabilities/status.v1.toml",
     "capabilities/cancel.v1.toml",
     "capabilities/telemetry.v1.toml",
-    "capabilities/lib/compute_optimization/srv/Navigate.srv",
-    "capabilities/lib/compute_optimization/srv/GetNavigateStatus.srv",
-    "capabilities/lib/compute_optimization/srv/CancelNavigate.srv",
-    "capabilities/lib/compute_optimization/srv/GetTelemetry.srv",
+    "capabilities/lib/navigation_vln/srv/Navigate.srv",
+    "capabilities/lib/navigation_vln/srv/GetNavigateStatus.srv",
+    "capabilities/lib/navigation_vln/srv/CancelNavigate.srv",
+    "capabilities/lib/navigation_vln/srv/GetTelemetry.srv",
     "scripts/build.sh",
     "scripts/start.sh",
     "scripts/stop.sh",
@@ -122,7 +122,7 @@ def iter_files(root: Path):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Audit RoboNix-Compute-Optimization-Skill release tree for common publishing hazards.")
+    parser = argparse.ArgumentParser(description="Audit RoboNix Compute Optimization release tree for common publishing hazards.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--max-file-mb", type=float, default=20.0)
     args = parser.parse_args()

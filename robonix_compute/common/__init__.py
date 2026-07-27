@@ -1,1 +1,1 @@
-"""Shared RoboNix-Compute-Optimization-Skill runtime utilities."""
+"""Shared RoboNix Compute Optimization runtime utilities."""

@@ -1,6 +1,6 @@
 # Third-Party Components
 
-RoboNix-Compute-Optimization-Skill keeps heavyweight third-party projects and checkpoints outside this
+RoboNix Compute Optimization keeps heavyweight third-party projects and checkpoints outside this
 repository. Users should install and cite them according to their own licenses.
 
 | Component | Use | Distribution policy |

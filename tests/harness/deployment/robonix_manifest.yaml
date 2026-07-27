@@ -2,10 +2,10 @@
 #
 # LOCAL VERIFICATION DEPLOYMENT — not a published robot.
 #
-# Brings up the compute-optimization skill against the synthetic mock_robot body
+# Brings up the instruction-following navigation service against the synthetic mock_robot body
 # so the whole Robonix path can be exercised on a machine with no simulator, no
 # checkpoints and no GPU: contract declaration and resolution, ROS image decode,
-# chassis/move gRPC round-trip, lazy skill activation, status polling, cancel.
+# chassis/move gRPC round-trip, lifecycle transitions, status polling, cancel.
 #
 # What this does NOT do: measure navigation. mock_robot's frames carry no
 # semantic content. Benchmark numbers (R2R-CE SR/SPL, step latency) come from the
@@ -19,22 +19,22 @@
 #   #    RoboStack env interpreter (see ../mock_robot/scripts/start.sh).
 #   rbnx build -f robonix_manifest.yaml
 #   rbnx boot  -f robonix_manifest.yaml
-#   rbnx caps -v      # mock_robot ACTIVE, compute_optimization INACTIVE
-#   rbnx tools        # the four robonix/skill/compute_optimization/* tools
+#   rbnx caps -v      # mock_robot and navigation_vln both ACTIVE
+#   rbnx tools        # the four robonix/service/navigation/vln/* tools
 #   rbnx chat         # "walk down the hallway and stop at the kitchen door"
 #   rbnx shutdown -f robonix_manifest.yaml
 #
 # INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
-# compute_optimization.step_size_m / turn_angle_deg. The body rejects a command
+# navigation_vln.step_size_m / turn_angle_deg. The body rejects a command
 # more than 50% off its own increment rather than silently travelling a different
 # distance. tests/unit/test_rbnx_contract_closure.py asserts this.
 manifestVersion: 1
-name: robonix-compute-optimization-local-verification
+name: robonix-navigation-vln-local-verification
 
 catalog:
-  name: robonix.robot.testing.compute_optimization_harness
+  name: robonix.robot.testing.navigation_vln_harness
   version: "0.1.0"
-  description: Local verification deployment for the compute-optimization skill against a synthetic body; not a published robot.
+  description: Local verification deployment for the instruction-following navigation service against a synthetic body; not a published robot.
   license: "MulanPSL-2.0"
   tags: [robot, deploy, testing, fixture, cloud-edge]
   maintainers:
@@ -76,8 +76,10 @@ system:
   atlas:
     listen: 127.0.0.1:50051
     log: info
-  # The executor is what fires CMD_ACTIVATE on a skill's first MCP call and
-  # polls navigate/status to a terminal state, so it is required here.
+  # The executor is what recognises navigate as async (it needs both the
+  # status and cancel siblings) and polls navigate/status to a terminal
+  # state, so it is required here. It does NOT activate this package:
+  # just-in-time activation is gated on a robonix/skill namespace.
   executor:
     listen: 127.0.0.1:50061
     log: info
@@ -96,10 +98,14 @@ primitive:
       image_height: 224
       hfov_deg: 79.0
 
-skill:
-  # Skills stay INACTIVE after boot; the executor activates this one on the
-  # first MCP call, which is when the cloud link opens.
-  - name: compute_optimization
+service:
+  # Services are activated by `rbnx boot` itself, after soma stage 1 has brought
+  # mock_robot to ACTIVE. So this reaches ACTIVE during boot — unlike a skill,
+  # which would sit INACTIVE until its first call. The cloud link still opens
+  # lazily, on the first navigate: see the package's on_activate.
+  #
+  # `name` must equal Service(id=...) in robonix_compute/rbnx/provider.py.
+  - name: navigation_vln
     path: ../../..
     config:
       # `mock` is CPU-only and needs no checkpoints. `internnav` additionally
@@ -112,7 +118,7 @@ skill:
       turn_angle_deg: 15.0
       # Both point at the one fixture instance here. On a real robot the camera
       # and chassis are separate primitives with different names, and binding
-      # them explicitly is what stops the skill picking the wrong one once a
+      # them explicitly is what stops the service picking the wrong one once a
       # deployment has more than one candidate per contract.
       camera_provider_id: mock_robot
       chassis_provider_id: mock_robot
@@ -120,3 +126,23 @@ skill:
       max_steps: 200
       timeout_s: 300.0
       action_steps_to_execute: 0
+
+skill:
+  # The LLM-facing façade. Unlike the service above it stays INACTIVE after boot
+  # — the executor activates it on the first call — which is exactly when the
+  # service it forwards to is already ACTIVE.
+  #
+  # `name` must equal Skill(id=...) in navigation_vln_skill/main.py, and must
+  # differ from the service's provider id above.
+  #
+  # Fetched by `url:` rather than a relative `path:` on purpose: this manifest
+  # ships inside the service repository, so a fresh clone has no sibling
+  # checkout to point at and a relative path would fail `rbnx build -f`. When
+  # developing both halves together, swap in:
+  #     path: ../../../../skill-navigation-vln-rbnx
+  #
+  # `config: {}` is correct with one service instance in the deployment.
+  - name: navigation_vln_skill
+    url: https://github.com/i6bimua/skill-navigation-vln-rbnx
+    branch: main
+    config: {}

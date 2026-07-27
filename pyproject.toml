@@ -3,15 +3,15 @@ requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "robonix-compute-optimization-skill"
-version = "0.2.0"
-description = "RoboNix skill package for compute-optimized dual-system vision-language navigation"
+name = "robonix-compute-optimization"
+version = "0.3.0"
+description = "RoboNix service package for instruction-following navigation on a compute-optimized dual-system runtime"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MulanPSL-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Hangyu Cao", email = "3087918372@qq.com" }]
-keywords = ["robonix", "embodied-ai", "vln", "compute-optimization", "edge-inference"]
+keywords = ["robonix", "embodied-ai", "vln", "navigation", "compute-optimization", "edge-inference"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
@@ -44,10 +44,10 @@ torch = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/i6bimua/skill-compute-optimization-rbnx"
-Repository = "https://github.com/i6bimua/skill-compute-optimization-rbnx"
-Documentation = "https://github.com/i6bimua/skill-compute-optimization-rbnx#readme"
-Issues = "https://github.com/i6bimua/skill-compute-optimization-rbnx/issues"
+Homepage = "https://github.com/i6bimua/service-navigation-vln-rbnx"
+Repository = "https://github.com/i6bimua/service-navigation-vln-rbnx"
+Documentation = "https://github.com/i6bimua/service-navigation-vln-rbnx#readme"
+Issues = "https://github.com/i6bimua/service-navigation-vln-rbnx/issues"
 
 [project.scripts]
 robonix-compute-download = "robonix_compute.cli.download:main"

@@ -53,7 +53,7 @@ def _instance(manifest: dict, section: str, name: str) -> dict:
 
 @pytest.fixture(scope="module")
 def increments(manifest) -> dict:
-    config = _instance(manifest, "skill", "compute_optimization")["config"]
+    config = _instance(manifest, "service", "navigation_vln")["config"]
     return {
         "step_size_m": float(config["step_size_m"]),
         "turn_angle_deg": float(config["turn_angle_deg"]),
@@ -155,24 +155,29 @@ def test_skill_requires_exactly_what_the_body_publishes():
 def test_motion_increments_agree_between_the_two_instances(manifest):
     """The manifest invariant: mismatched increments make every command fail."""
     primitive = _instance(manifest, "primitive", "mock_robot")["config"]
-    skill = _instance(manifest, "skill", "compute_optimization")["config"]
-    assert float(primitive["step_size_m"]) == float(skill["step_size_m"])
-    assert float(primitive["turn_angle_deg"]) == float(skill["turn_angle_deg"])
+    service = _instance(manifest, "service", "navigation_vln")["config"]
+    assert float(primitive["step_size_m"]) == float(service["step_size_m"])
+    assert float(primitive["turn_angle_deg"]) == float(service["turn_angle_deg"])
 
 
-def test_skill_binds_the_body_explicitly(manifest):
-    # Without explicit provider ids the skill needs a unique match per contract,
-    # which breaks the moment a second camera or chassis joins the deployment.
-    skill = _instance(manifest, "skill", "compute_optimization")["config"]
-    assert skill["camera_provider_id"] == "mock_robot"
-    assert skill["chassis_provider_id"] == "mock_robot"
+def test_service_binds_the_body_explicitly(manifest):
+    # Without explicit provider ids the service needs a unique match per
+    # contract, which breaks the moment a second camera or chassis joins the
+    # deployment.
+    service = _instance(manifest, "service", "navigation_vln")["config"]
+    assert service["camera_provider_id"] == "mock_robot"
+    assert service["chassis_provider_id"] == "mock_robot"
 
 
 def test_map_pose_is_off_because_no_mapping_service_is_deployed(manifest):
     # use_map_pose would resolve robonix/service/map/pose, which nothing here
-    # provides, leaving the skill permanently Deferred.
-    assert _instance(manifest, "skill", "compute_optimization")["config"]["use_map_pose"] is False
-    assert not (manifest.get("service") or []), "a mapping service would change this expectation"
+    # provides, leaving the provider permanently Deferred.
+    assert _instance(manifest, "service", "navigation_vln")["config"]["use_map_pose"] is False
+    # navigation_vln is itself a service instance now, so "the service section is
+    # empty" is no longer the right check — what matters is that nothing here
+    # provides map/pose. Anything other than our own instance might.
+    others = [e["name"] for e in (manifest.get("service") or []) if e["name"] != "navigation_vln"]
+    assert not others, f"a second service could provide map/pose: {others}"
 
 
 def test_cloud_process_is_not_a_deployment_package(manifest):
@@ -183,12 +188,12 @@ def test_cloud_process_is_not_a_deployment_package(manifest):
         for entry in (manifest.get(section) or [])
     }
     assert not {"cloud", "cloud_s2", "compute_cloud"} & names
-    skill = _instance(manifest, "skill", "compute_optimization")["config"]
-    assert skill["cloud_host"] and skill["cloud_port"]
+    service = _instance(manifest, "service", "navigation_vln")["config"]
+    assert service["cloud_host"] and service["cloud_port"]
 
 
 def test_manifest_paths_resolve(manifest):
-    for section, name in (("primitive", "mock_robot"), ("skill", "compute_optimization")):
+    for section, name in (("primitive", "mock_robot"), ("service", "navigation_vln")):
         entry = _instance(manifest, section, name)
         target = (DEPLOYMENT_ROOT / entry["path"]).resolve()
         assert (target / "package_manifest.yaml").is_file(), f"{name}: {target} has no manifest"

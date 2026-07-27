@@ -1,20 +1,30 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MulanPSL-2.0
-"""robonix.skill.compute_optimization — Atlas bridge.
+"""robonix.service.navigation.vln — Atlas bridge.
 
-Registers the compute-optimized dual-system VLN runtime as a Robonix Skill and
-exposes four MCP tools (navigate / status / cancel / telemetry).
+Registers the compute-optimized dual-system VLN runtime as a Robonix Service
+and exposes four MCP tools (navigate / status / cancel / telemetry).
 
-Lifecycle (skills are lazy by design):
+This is the instruction-following sibling of `robonix.service.navigation`
+(Nav2), whose goal is a `PoseStamped`. Both own a long-running navigation
+runtime and expose the same navigate / status / cancel triple; this one takes a
+natural-language route description instead of a coordinate.
 
-  * `rbnx boot` sends CMD_INIT and stops -- the skill stays INACTIVE. `on_init`
-    therefore only parses and validates config: no checkpoints, no cloud
-    socket, no ROS subscriptions. Booting a deployment must never load a
-    multi-gigabyte VLN model just because the package is listed.
-  * The executor sends CMD_ACTIVATE just-in-time on the first MCP call.
-    `on_activate` resolves the camera / chassis contracts through Atlas, builds
-    the compute core, and starts the observation subscriptions. Missing
-    upstream providers return `Deferred` (retry later), not `Err` (dead).
+Lifecycle -- note the difference from a Skill:
+
+  * `rbnx boot` sends CMD_INIT *and* CMD_ACTIVATE. Lazy activation is a Skill
+    property: both `rbnx` and the executor gate it on the namespace starting
+    with `robonix/skill`, so a service is activated eagerly at boot.
+  * `on_init` therefore still only parses and validates config.
+  * `on_activate` does the part that is cheap and safe at boot: resolve the
+    camera / chassis contracts through Atlas and subscribe. By this point every
+    primitive is already ACTIVE -- rbnx blocks on soma stage 1 before it starts
+    the `service:` section -- so the resolution normally succeeds.
+  * The compute core is deliberately NOT built here. Checkpoints and the cloud
+    link are acquired by `_ensure_compute_ready()` on the first navigate call.
+    Loading a multi-gigabyte VLN model at boot would make GPU memory and a
+    reachable cloud host boot-time requirements of every deployment that merely
+    lists this package, and would turn a cloud outage into a boot failure.
 
 Cloud boundary: the cloud System-2 process is part of this same package's
 runtime, reached at `cloud_host:cloud_port`. It is not a separate Robonix
@@ -29,7 +39,7 @@ import logging
 import threading
 from typing import Any
 
-from robonix_api import ATLAS, Deferred, Err, Ok, Skill
+from robonix_api import ATLAS, Deferred, Err, Ok, Service
 from robonix_api.atlas_types import Transport
 
 from robonix_compute.rbnx.action_bridge import MotionCommand, send_move_command, strip_scheme
@@ -37,15 +47,17 @@ from robonix_compute.rbnx.config import parse_config
 from robonix_compute.rbnx.controller import RunLimits, NavigationController
 from robonix_compute.rbnx.observation import ObservationBuffer
 
-logging.basicConfig(level=logging.INFO, format="[compute_optimization] %(levelname)s %(message)s")
-log = logging.getLogger("compute_optimization")
+logging.basicConfig(level=logging.INFO, format="[navigation_vln] %(levelname)s %(message)s")
+log = logging.getLogger("navigation_vln")
 
-skill = Skill(id="compute_optimization", namespace="robonix/skill/compute_optimization")
+# `id` must equal the instance `name` in the deployment manifest's `service:`
+# section; the namespace is what Atlas routes on.
+service = Service(id="navigation_vln", namespace="robonix/service/navigation/vln")
 
-# Codegen output from capabilities/lib/compute_optimization/srv/*.srv. robonix_api puts
+# Codegen output from capabilities/lib/navigation_vln/srv/*.srv. robonix_api puts
 # rbnx-build/codegen/{proto_gen,robonix_mcp_types} on sys.path at import time,
 # so this resolves after `scripts/build.sh` has run.
-from compute_optimization_mcp import (  # noqa: E402
+from navigation_vln_mcp import (  # noqa: E402
     CancelNavigate_Request,
     CancelNavigate_Response,
     GetNavigateStatus_Request,
@@ -89,6 +101,11 @@ class _State:
         self.move_stub: Any = None
         self.chassis_pb2: Any = None
         self.subscriptions: list[Any] = []
+        # `wired` is set by on_activate once the robot's contracts are bound.
+        # `active` additionally means the compute core is loaded, which happens
+        # on the first navigate call rather than at boot -- see the module
+        # docstring for why the two are separate.
+        self.wired = False
         self.active = False
 
 
@@ -151,9 +168,9 @@ def _subscribe(contract_id: str, provider_id: str, msg_type: str, callback: Any,
     cap = _resolve(contract_id, Transport.ROS2, provider_id)
     if cap is None:
         raise RuntimeError(f"{contract_id} disappeared between checks")
-    channel = skill.connect_capability(cap, contract_id, Transport.ROS2)
+    channel = service.connect_capability(cap, contract_id, Transport.ROS2)
     qos = channel_qos(channel, default_qos)
-    subscription = skill.create_subscription(
+    subscription = service.create_subscription(
         contract_id,
         topic=channel.endpoint,
         msg_type=msg_type,
@@ -200,14 +217,14 @@ def _build_observation_inputs() -> None:
 
 def _build_move_sink() -> None:
     """Open the chassis/move gRPC channel and build its typed stub."""
-    import grpc  # local: only needed once the skill actually activates
+    import grpc  # local: only needed once the service binds its chassis
     import chassis_pb2  # type: ignore[import-not-found]
     import robonix_contracts_pb2_grpc as contracts_grpc  # type: ignore[import-not-found]
 
     cap = _resolve(MOVE_CONTRACT, Transport.GRPC, str(_state.config.get("chassis_provider_id", "")))
     if cap is None:
         raise RuntimeError(f"{MOVE_CONTRACT} disappeared between checks")
-    channel_view = skill.connect_capability(cap, MOVE_CONTRACT, Transport.GRPC)
+    channel_view = service.connect_capability(cap, MOVE_CONTRACT, Transport.GRPC)
     endpoint = strip_scheme(channel_view.endpoint)
     _state.move_channel = grpc.insecure_channel(endpoint)
     _state.move_stub = contracts_grpc.RobonixPrimitiveChassisMoveStub(_state.move_channel)
@@ -242,7 +259,7 @@ def _build_compute_core() -> Any:
 
 
 # ── MCP tools ───────────────────────────────────────────────────────────────
-@skill.mcp("robonix/skill/compute_optimization/navigate")
+@service.mcp("robonix/service/navigation/vln/navigate")
 def navigate(req: Navigate_Request) -> Navigate_Response:
     """Navigate by following a natural-language instruction, e.g. "walk down
     the hallway, turn left at the painting and stop by the kitchen door".
@@ -250,22 +267,16 @@ def navigate(req: Navigate_Request) -> Navigate_Response:
     known map goal. Returns immediately with a run_id; poll status with that
     run_id to follow progress, and cancel to abort. Only one navigation run
     can be active at a time."""
+    # First call pays for the checkpoints and the cloud link; later calls are a
+    # flag check. Deliberately not done in on_activate — see the module
+    # docstring.
+    unavailable = _ensure_compute_ready()
+    if unavailable is not None:
+        return Navigate_Response(accepted=False, run_id="", message=unavailable)
     controller = _state.controller
-    if controller is None or not _state.active:
-        # Activation is the executor's job: it sends Driver(CMD_ACTIVATE) before
-        # dispatching the first MCP call. Reaching here means the call bypassed
-        # the executor (a direct MCP client), and no amount of retrying will
-        # change that — say so instead of implying activation is in flight.
+    if controller is None:
         return Navigate_Response(
-            accepted=False,
-            run_id="",
-            message=(
-                "skill is INACTIVE. Robonix activates skills lazily: the executor sends "
-                "Driver(CMD_ACTIVATE) before it dispatches the first call, so route this "
-                "through the executor (rbnx chat / pilot) rather than calling the MCP "
-                "endpoint directly, or send CMD_ACTIVATE on "
-                "robonix/skill/compute_optimization/driver yourself."
-            ),
+            accepted=False, run_id="", message="controller unavailable after setup reported success"
         )
 
     buffer = _state.observations
@@ -293,10 +304,13 @@ def navigate(req: Navigate_Request) -> Navigate_Response:
     return Navigate_Response(accepted=True, run_id=run.run_id, message="navigation started")
 
 
-@skill.mcp("robonix/skill/compute_optimization/navigate/status")
+@service.mcp("robonix/service/navigation/vln/navigate/status")
 def navigate_status(req: GetNavigateStatus_Request) -> GetNavigateStatus_Response:
     """Poll a navigation run. Empty run_id means the most recent run. `state`
     is one of PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED, TIMEOUT."""
+    # No _ensure_compute_ready() here: polling must answer "unknown run" without
+    # loading a model. The executor polls this every 2s, including right after a
+    # navigate call that was itself rejected.
     controller = _state.controller
     snapshot = controller.status(req.run_id or None) if controller is not None else None
     if snapshot is None:
@@ -322,18 +336,22 @@ def navigate_status(req: GetNavigateStatus_Request) -> GetNavigateStatus_Respons
     )
 
 
-@skill.mcp("robonix/skill/compute_optimization/navigate/cancel")
+@service.mcp("robonix/service/navigation/vln/navigate/cancel")
 def navigate_cancel(req: CancelNavigate_Request) -> CancelNavigate_Response:
     """Abort the active navigation run. Empty run_id cancels whatever is
     running. Idempotent."""
+    # Like status, this must not build the runtime: cancelling a run that never
+    # started is the normal way the executor unwinds a rejected navigate.
     controller = _state.controller
     if controller is None:
-        return CancelNavigate_Response(ok=False, message="skill is not active")
+        return CancelNavigate_Response(
+            ok=False, message="no navigation runtime yet — nothing has been started to cancel"
+        )
     ok, message = controller.cancel(req.run_id or None)
     return CancelNavigate_Response(ok=ok, message=message)
 
 
-@skill.mcp("robonix/skill/compute_optimization/telemetry")
+@service.mcp("robonix/service/navigation/vln/telemetry")
 def navigate_telemetry(req: GetTelemetry_Request) -> GetTelemetry_Response:
     """Read cloud-edge compute optimization measurements for a navigation run:
     how many steps requested a fresh cloud latent, how many cloud responses
@@ -367,7 +385,7 @@ def navigate_telemetry(req: GetTelemetry_Request) -> GetTelemetry_Response:
 
 
 # ── lifecycle ───────────────────────────────────────────────────────────────
-@skill.on_init
+@service.on_init
 def init(cfg: dict):
     """REGISTERED -> INACTIVE. Light: validate config only.
 
@@ -389,17 +407,23 @@ def init(cfg: dict):
     return Ok()
 
 
-@skill.on_activate
+@service.on_activate
 def activate():
-    """INACTIVE -> ACTIVE. Heavy: resolve dependencies and load the runtime.
+    """INACTIVE -> ACTIVE. Bind the robot's contracts; do not load the model.
 
-    Fired by the executor on the first MCP call. Returns `Deferred` when the
-    camera or chassis provider is not on Atlas yet so the executor can retry,
-    and `Err` only for failures that retrying will not fix.
+    Fired by `rbnx boot` (services are activated eagerly), after soma stage 1
+    has brought every primitive to ACTIVE. Returns `Deferred` when the camera or
+    chassis provider still is not on Atlas, and `Err` only for failures that
+    retrying will not fix.
+
+    The compute core is left to `_ensure_compute_ready()`: see the module
+    docstring. Subscribing here rather than on first call is deliberate — the
+    observation buffer needs time to fill, and binding at boot means `rbnx caps`
+    reports whether the wiring is sound without anyone having to navigate first.
     """
     with _state.lock:
-        if _state.active and _state.controller is not None:
-            log.info("CMD_ACTIVATE — already active, no-op")
+        if _state.wired:
+            log.info("CMD_ACTIVATE — already wired, no-op")
             return Ok()
 
         if not _state.config:
@@ -410,18 +434,53 @@ def activate():
             return Deferred(
                 "waiting for deployment providers: "
                 + ", ".join(missing)
-                + ". The skill needs a camera primitive (rgb + depth + intrinsics), a pose source "
-                f"({_pose_contract()}) and a chassis primitive offering {MOVE_CONTRACT}."
+                + ". This service needs a camera primitive (rgb + depth + intrinsics), a pose "
+                f"source ({_pose_contract()}) and a chassis primitive offering {MOVE_CONTRACT}."
             )
 
         try:
             _build_observation_inputs()
             _build_move_sink()
-            _state.compute = _build_compute_core()
         except Exception as exc:  # noqa: BLE001
             log.exception("CMD_ACTIVATE failed")
             _teardown_locked()
-            return Err(f"failed to activate: {type(exc).__name__}: {exc}")
+            return Err(f"failed to bind deployment contracts: {type(exc).__name__}: {exc}")
+
+        _state.wired = True
+    log.info(
+        "CMD_ACTIVATE ok — bound to camera/chassis; %s runtime loads on the first navigate call",
+        _state.config["mode"],
+    )
+    return Ok()
+
+
+def _ensure_compute_ready() -> str | None:
+    """Load the compute core and build the controller. Idempotent.
+
+    Called from `navigate`, not from `on_activate`, so that a deployment can
+    boot without a GPU or a reachable cloud host. Returns None on success, or a
+    message explaining why navigation is not possible.
+    """
+    with _state.lock:
+        if _state.active and _state.controller is not None:
+            return None
+        if not _state.wired:
+            return (
+                "not bound to the deployment yet: CMD_ACTIVATE has not succeeded. "
+                f"Check `rbnx caps -v` for {service.id} — a Deferred state names the "
+                "missing camera, pose or chassis contract."
+            )
+        try:
+            _state.compute = _build_compute_core()
+        except Exception as exc:  # noqa: BLE001 - any setup failure is reportable, not fatal
+            log.exception("compute core setup failed")
+            _state.compute = None
+            return (
+                f"compute runtime unavailable ({type(exc).__name__}: {exc}). "
+                f"mode={_state.config.get('mode')}; for mode=internnav check the checkpoints and "
+                f"the cloud System-2 host at {_state.config.get('cloud_host')}:"
+                f"{_state.config.get('cloud_port')}."
+            )
 
         assert _state.observations is not None
         _state.controller = NavigationController(
@@ -437,12 +496,17 @@ def activate():
             ),
         )
         _state.active = True
-    log.info("CMD_ACTIVATE ok — controller running (mode=%s)", _state.config["mode"])
-    return Ok()
+    log.info("compute runtime ready — controller running (mode=%s)", _state.config["mode"])
+    return None
 
 
 def _teardown_locked() -> list[str]:
-    """Release everything activate() acquired. Caller holds _state.lock."""
+    """Release everything on_activate and _ensure_compute_ready acquired.
+
+    Caller holds _state.lock. Clears both flags: leaving `wired` set after the
+    subscriptions are destroyed would let a later `_ensure_compute_ready()` past
+    its wiring check and then trip on a None observation buffer.
+    """
     stragglers: list[str] = []
     if _state.controller is not None:
         stragglers = _state.controller.stop_runtime()
@@ -474,18 +538,24 @@ def _teardown_locked() -> list[str]:
     _state.subscriptions.clear()
     _state.observations = None
     _state.active = False
+    _state.wired = False
     return stragglers
 
 
-@skill.on_deactivate
+@service.on_deactivate
 def deactivate():
-    """ACTIVE -> INACTIVE. Drop heavy state but stay registered.
+    """ACTIVE -> INACTIVE. Drop the runtime and the wiring but stay registered.
 
-    A follow-up MCP call re-activates. Idempotent: the executor's idle-eviction
-    policy and an explicit shutdown can both land here.
+    A later CMD_ACTIVATE re-binds. Idempotent — an explicit deactivate and a
+    shutdown can both land here.
+
+    The guard tests `wired` as well as `active`: after boot the normal state is
+    wired-but-not-active (subscriptions and the chassis channel are open, the
+    model is not loaded), and testing `active` alone would return early and leak
+    both.
     """
     with _state.lock:
-        if not _state.active and _state.controller is None:
+        if not _state.wired and not _state.active and _state.controller is None:
             return Ok()
         stragglers = _teardown_locked()
     if stragglers:
@@ -494,14 +564,14 @@ def deactivate():
     return Ok()
 
 
-@skill.on_shutdown
+@service.on_shutdown
 def shutdown():
     """any -> TERMINATED. Last-chance cleanup."""
     return deactivate()
 
 
 def main() -> int:
-    skill.run()
+    service.run()
     with _state.lock:
         _teardown_locked()
     return 0

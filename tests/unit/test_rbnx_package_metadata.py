@@ -34,7 +34,7 @@ def _pyproject_field(field: str) -> str:
 
 # The catalog entry this package will be published under. `package.name` must
 # match it byte for byte.
-CATALOG_NAME = "robonix.skill.compute_optimization"
+CATALOG_NAME = "robonix.service.navigation.vln"
 
 # Copied from robonix-package-catalog/scripts/build_catalog.py.
 MAINTAINER_RE = re.compile(r"^[^<>\n]+ <[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+>$")
@@ -65,10 +65,13 @@ def test_package_name_matches_the_catalog_entry(package):
     assert package["name"] == CATALOG_NAME
 
 
-def test_package_name_encodes_the_skill_kind():
-    # The catalog derives `kind` from the second dotted segment.
+def test_package_name_encodes_the_service_kind():
+    # The catalog derives `kind` from the second dotted segment. This package
+    # owns a navigation runtime and drives the chassis itself rather than
+    # sequencing other services, which is the service boundary — see
+    # CHANGELOG 0.3.0.
     assert CATALOG_NAME.split(".")[0] == "robonix"
-    assert CATALOG_NAME.split(".")[1] == "skill"
+    assert CATALOG_NAME.split(".")[1] == "service"
 
 
 def test_version_is_a_string_not_a_float(package):
@@ -100,7 +103,12 @@ def test_tags_is_a_non_empty_list_of_strings(package):
     tags = package["tags"]
     assert isinstance(tags, list) and tags
     assert all(isinstance(tag, str) and tag.strip() for tag in tags)
-    assert "skill" in tags
+    # The catalog filters on tags, so the kind has to be one of them.
+    assert "service" in tags
+    assert "skill" not in tags, "a service must not advertise itself as a skill"
+    # The mechanism belongs here rather than in the package name — this is one of
+    # the places the catalog review explicitly kept it.
+    assert "compute-optimization" in tags
 
 
 def test_maintainers_match_the_catalog_regex(package):
@@ -129,23 +137,23 @@ def test_every_capability_entry_has_a_name_and_a_resolvable_path(manifest):
 
 def test_capability_names_are_under_the_declared_namespace(manifest):
     for entry in manifest["capabilities"]:
-        assert entry["name"].startswith("robonix/skill/compute_optimization/"), entry["name"]
+        assert entry["name"].startswith("robonix/service/navigation/vln/"), entry["name"]
 
 
 def test_the_mandatory_driver_contract_is_declared(manifest):
     # rbnx boot sends Driver(CMD_INIT) against this; without it the on_init
     # handler never fires and every MCP call fails.
     names = {entry["name"] for entry in manifest["capabilities"]}
-    assert "robonix/skill/compute_optimization/driver" in names
+    assert "robonix/service/navigation/vln/driver" in names
 
 
 def test_the_long_task_triple_is_complete(manifest):
     # The executor polls status until a terminal state and needs cancel to abort.
     names = {entry["name"] for entry in manifest["capabilities"]}
     assert {
-        "robonix/skill/compute_optimization/navigate",
-        "robonix/skill/compute_optimization/navigate/status",
-        "robonix/skill/compute_optimization/navigate/cancel",
+        "robonix/service/navigation/vln/navigate",
+        "robonix/service/navigation/vln/navigate/status",
+        "robonix/service/navigation/vln/navigate/cancel",
     } <= names
 
 
@@ -159,10 +167,10 @@ def test_contract_ids_inside_the_toml_match_the_manifest(manifest):
         )
 
 
-def test_every_contract_declares_kind_skill_and_rpc_mode(manifest):
+def test_every_contract_declares_kind_service_and_rpc_mode(manifest):
     for entry in manifest["capabilities"]:
         text = (ROOT / entry["path"]).read_text(encoding="utf-8")
-        assert re.search(r'^\s*kind\s*=\s*"skill"', text, flags=re.M), entry["path"]
+        assert re.search(r'^\s*kind\s*=\s*"service"', text, flags=re.M), entry["path"]
         assert re.search(r'^\s*type\s*=\s*"rpc"', text, flags=re.M), entry["path"]
 
 
@@ -178,16 +186,34 @@ def test_referenced_idl_files_exist(manifest):
         assert (CAPABILITIES_DIR / "lib" / reference).is_file(), f"missing IDL: {reference}"
 
 
-def test_user_invocable_contracts_are_marked(manifest):
-    """Pilot only offers `user_invocable` contracts to the LLM."""
-    invocable = set()
-    for entry in manifest["capabilities"]:
-        text = (ROOT / entry["path"]).read_text(encoding="utf-8")
-        if re.search(r"^\s*user_invocable\s*=\s*true", text, flags=re.M):
-            invocable.add(entry["name"])
-    assert "robonix/skill/compute_optimization/navigate" in invocable
-    # The lifecycle contract must NOT be user-invocable.
-    assert "robonix/skill/compute_optimization/driver" not in invocable
+def test_every_declared_contract_is_actually_registered_in_code(manifest):
+    """A contract in the manifest but not in the provider is worse than absent.
+
+    rbnx declares each manifest capability on atlas at startup, so a consumer
+    resolves it, connects, and only then finds nothing serving it. This checks
+    the two lists agree: `driver` is handled by the lifecycle decorators, and
+    every other capability needs its own `@service.mcp("<id>")`.
+
+    Replaces an earlier check on a `[semantics] user_invocable` flag. That flag
+    appears nowhere in the robonix source tree — pilot lists every provider that
+    ships a non-empty CAPABILITY.md and marks the ones whose kind is `skill`; it
+    never reads `user_invocable`. The check therefore asserted a rule the
+    framework does not have.
+    """
+    provider = (ROOT / "robonix_compute" / "rbnx" / "provider.py").read_text(encoding="utf-8")
+    registered = set(re.findall(r'@service\.mcp\(\s*"([^"]+)"', provider))
+
+    declared = {entry["name"] for entry in manifest["capabilities"]}
+    driver = {name for name in declared if name.endswith("/driver")}
+    assert len(driver) == 1, f"expected exactly one lifecycle contract, got {driver}"
+
+    assert registered == declared - driver, (
+        f"manifest and provider disagree — declared but unregistered: "
+        f"{sorted(declared - driver - registered)}; registered but undeclared: "
+        f"{sorted(registered - declared)}"
+    )
+    # The lifecycle contract is served by the Driver handler, never as a tool.
+    assert not (registered & driver)
 
 
 def test_every_srv_declares_a_request_response_split():

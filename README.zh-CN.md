@@ -1,6 +1,6 @@
 <div align="center">
 
-# RoboNix Compute Optimization Skill
+# RoboNix Compute Optimization
 
 **面向 RoboNix 双系统视觉语言导航的开源计算优化工具**
 
@@ -10,7 +10,7 @@
 [运行图片](#running-images) ·
 [快速开始](#quick-start)
 
-[![CI](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/skill-compute-optimization-rbnx/actions/workflows/ci.yml)
+[![CI](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg)](https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml)
 <br>
 [![项目指标](docs/assets/result_badges.svg)](#benchmark-results)
 
@@ -25,10 +25,10 @@
   </a>
 </div>
 
-RoboNix Compute Optimization Skill 为 RoboNix 提供一个外部、经过测量验证的双系统 VLN 计算优化模块：慢速语义推理运行在云端 GPU，时延敏感的动作生成保留在端侧。该工具结合异步执行、关键 latent 同步、active/pending 上下文缓存、自适应超时处理和逐步遥测。
+RoboNix Compute Optimization 为 RoboNix 提供一个外部、经过测量验证的双系统 VLN 计算优化模块：慢速语义推理运行在云端 GPU，时延敏感的动作生成保留在端侧。该工具结合异步执行、关键 latent 同步、active/pending 上下文缓存、自适应超时处理和逐步遥测。
 
-**项目边界：**本仓库是一个可发布的 RoboNix Skill 软件包
-（`robonix.skill.compute_optimization`）：提供 `package_manifest.yaml`、自有能力
+**项目边界：**本仓库是一个可发布的 RoboNix Service 软件包
+（`robonix.service.navigation.vln`）：提供 `package_manifest.yaml`、自有能力
 约定，以及一个向 Atlas 注册并暴露四个 MCP 工具的 provider。它不修改 RoboNix 核心 ——
 只消费标准的相机与底盘约定，不引入任何厂商 SDK。云端 S2 属于同一套运行时而非独立
 软件包，运行在机器人部署之外的 GPU 主机上。独立的 HTTP Skill API 继续为非 RoboNix
@@ -56,7 +56,7 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 
 | 目标 | 入口 | 所需资源 |
 | --- | --- | --- |
-| 在 RoboNix 部署上运行本 skill | `rbnx build -f robonix_manifest.yaml && rbnx boot -f robonix_manifest.yaml` | 提供 camera 与 chassis 契约的机器人 |
+| 在 RoboNix 部署上运行本 service | `rbnx build -f robonix_manifest.yaml && rbnx boot -f robonix_manifest.yaml` | 提供 camera 与 chassis 契约的机器人 |
 | 验证运行时 contract | `bash scripts/run_mock_compute.sh --steps 5` | 仅 CPU；安装后约一分钟 |
 | 检查真实模型就绪状态 | `robonix-compute-preflight ... --strict` | InternNav、Habitat、权重、数据和空闲 GPU |
 | 复现导航运行 | `bash scripts/run_habitat_eval.sh` | 已准备的 R2R-CE/MP3D-CE 环境 |
@@ -68,7 +68,7 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 - [演示视频](#demo-video)
 - [项目动态](#news)
 - [系统效果](#results)
-- [核心计算优化](#what-the-skill-optimizes)
+- [核心计算优化](#what-the-runtime-optimizes)
 - [系统架构](#architecture)
 - [运行图片](#running-images)
 - [RoboNix 集成边界](#robonix-integration-boundary)
@@ -98,10 +98,11 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="news"></a>
 ## 📰 项目动态
 
-- **2026-07-25 — v0.2.0：**成为可发布的 RoboNix skill 包 `robonix.skill.compute_optimization`：五个能力契约、注册到 Atlas 并暴露四个 MCP 工具的 provider（惰性激活）、离散动作到 `chassis/move` 的映射，以及无需硬件的接线夹具。详见 [CHANGELOG.md](CHANGELOG.md)。
+- **2026-07-27 — v0.3.0：**改为以 **service** 身份发布 —— `robonix.service.navigation.vln`，即 `robonix.service.navigation`（Nav2）的指令跟随版兄弟。所有契约 ID 都变了，因此这是一个破坏性版本；契约 ID 对照表、以及为什么计算运行时改为首次调用时加载而不是 boot 时加载，见 [CHANGELOG.md](CHANGELOG.md)。
+- **2026-07-25 — v0.2.0：**成为可发布的 RoboNix 包 `robonix.skill.compute_optimization`：五个能力契约、注册到 Atlas 并暴露四个 MCP 工具的 provider（惰性激活）、离散动作到 `chassis/move` 的映射，以及无需硬件的接线夹具。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-19 — v0.1.0：**发布公开运行时、InternVLA-N1 DualVLN 适配器、HTTP Skill 边界、结构化 R2R-CE 结果包、授权数据门禁、严格模型/环境预检和双语复现流程。
 
-<a id="what-the-skill-optimizes"></a>
+<a id="what-the-runtime-optimizes"></a>
 ## 🧩 核心计算优化
 
 | 机制 | 运行时作用 |
@@ -137,18 +138,31 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix 集成边界
 
-本仓库是一个 RoboNix **Skill 软件包** —— `robonix.skill.compute_optimization`。
+本仓库是一个 RoboNix **Service 软件包** —— `robonix.service.navigation.vln`。
 仓库根目录的 `package_manifest.yaml` 声明了五个能力约定，因此 `rbnx boot` 会拉起
-provider、Atlas 会完成注册、Pilot 的 LLM 可以直接用自然语言调用它。能力手册见
-[CAPABILITY.md](CAPABILITY.md)，配置字段见 [config.spec](config.spec)。
+provider、Atlas 会完成注册。能力手册见 [CAPABILITY.md](CAPABILITY.md)，配置字段见
+[config.spec](config.spec)。
+
+它是 **`robonix.service.navigation`（Nav2）的指令跟随版兄弟**：两者都拥有一个长时
+运行的导航运行时，暴露同一组 navigate / status / cancel，区别在于 Nav2 的目标是
+度量意义上的 `PoseStamped`，而这里的目标是一句话。给坐标就找 Nav2，给路线描述就
+找这里。
 
 | 提供的能力约定 | 传输 | 用途 |
 | --- | --- | --- |
-| `robonix/skill/compute_optimization/driver` | gRPC | 生命周期（`CMD_INIT` / `CMD_ACTIVATE` / …） |
-| `robonix/skill/compute_optimization/navigate` | MCP | 按指令启动导航，返回 `run_id` |
-| `robonix/skill/compute_optimization/navigate/status` | MCP | 轮询 `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
-| `robonix/skill/compute_optimization/navigate/cancel` | MCP | 中止当前任务（幂等） |
-| `robonix/skill/compute_optimization/telemetry` | MCP | 单次任务的同步/超时/复用/延迟计数 |
+| `robonix/service/navigation/vln/driver` | gRPC | 生命周期（`CMD_INIT` / `CMD_ACTIVATE` / …） |
+| `robonix/service/navigation/vln/navigate` | MCP | 按指令启动导航，返回 `run_id` |
+| `robonix/service/navigation/vln/navigate/status` | MCP | 轮询 `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
+| `robonix/service/navigation/vln/navigate/cancel` | MCP | 中止当前任务（幂等） |
+| `robonix/service/navigation/vln/telemetry` | MCP | 单次任务的同步/超时/复用/延迟计数 |
+
+若需要自然语言调用，请同时部署薄封装
+[`robonix.skill.navigation.vln`](https://github.com/i6bimua/skill-navigation-vln-rbnx)。
+Pilot 只给 `kind: skill` 的 provider 打 `` `[skill]` `` 标签，而那个标签正是提示 LLM
+首次调用前先读 CAPABILITY.md 的唯一机制 —— 这对我们很关键，因为 `navigate` 是
+start → poll → cancel 的多步序列，而不是一次请求。该封装自身不含任何运行时：S1/S2
+模型、云端连接、底盘连接全部留在本 service 里，无论从哪个入口进来，一个部署里都只
+存在一份。
 
 观测输入与动作输出全部走标准约定，因此可以绑定到任何提供这些约定的 RoboNix
 机器人，本仓库不引入任何厂商 SDK：
@@ -176,19 +190,20 @@ provider、Atlas 会完成注册、Pilot 的 LLM 可以直接用自然语言调�
 | 路径 | 谁拥有 episode 循环 | 仿真器在哪 | 用途 |
 | --- | --- | --- | --- |
 | **Benchmark**（`robonix-compute-habitat-eval`） | InternNav evaluator | 在云端进程内，与 S2 同处 | 复现 R2R-CE 结果。evaluator 拥有 `env.reset` / `env.step`、episode 迭代和 SR/SPL 指标；边端通过 WebSocket 应答 S1 请求。 |
-| **机器人**（`robonix.skill.compute_optimization`） | 本 skill | 没有仿真器 —— 真实机器人 | 跑在 RoboNix 部署上。skill 拥有循环，读相机与底盘约定，下发 `chassis/move`。 |
+| **机器人**（`robonix.service.navigation.vln`） | 本 service | 没有仿真器 —— 真实机器人 | 跑在 RoboNix 部署上。service 拥有循环，读相机与底盘约定，下发 `chassis/move`。 |
 
 Benchmark 路径刻意保持原样。重新实现它的循环会让已发表的 SR/SPL 变成从我们的循环
 算出来的，而不是 InternNav 经过验证的 harness，因此那条路径一行不改，本仓库只提供
 接入其中的计算运行时。
 
-### 在部署中使用 skill
+### 在部署中使用本 service
 
 ```yaml
 # robonix_manifest.yaml
-skill:
-  - name: compute_optimization
-    url: https://github.com/i6bimua/skill-compute-optimization-rbnx
+service:
+  # `name` 必须等于 robonix_compute/rbnx/provider.py 里的 Service(id=...)
+  - name: navigation_vln
+    url: https://github.com/i6bimua/service-navigation-vln-rbnx
     branch: main
     config:
       mode: internnav          # 建议先用 `mock`：纯 CPU、无需权重
@@ -202,12 +217,23 @@ skill:
 robonix-compute-cloud --mode internnav --port 8765   # 在 GPU 主机上
 rbnx build -f robonix_manifest.yaml                  # 内部执行 rbnx codegen --mcp
 rbnx boot  -f robonix_manifest.yaml
+rbnx caps -v                                         # navigation_vln 显示 ACTIVE
 rbnx tools                                           # 四个 MCP 工具出现
-rbnx chat                                            # “走过走廊，在厨房门口停下”
 ```
 
-Skill 在 boot 后保持 `INACTIVE` 是设计使然：`CMD_INIT` 只做配置校验，Executor 在
-第一次调用时才下发 `CMD_ACTIVATE`，那时才加载权重、建立云端连接。
+#### 为什么模型不在 boot 时加载
+
+`rbnx boot` 会对 service 连续下发 `CMD_INIT` 和 `CMD_ACTIVATE` —— 惰性激活是 skill
+的属性，`rbnx` 和 executor 都以 `robonix/skill` 命名空间为判据。激活发生在所有
+primitive 均已 ACTIVE 之后，所以 `on_activate` 只做一件事：绑定相机、位姿、底盘约定。
+
+权重和云端连接是在**第一次 `navigate` 调用**时才获取的。若放在 boot 里做，GPU 显存
+和可达的云端主机就会变成「任何只是列出了本包的部署」的启动前置条件，而云端 S2
+主机不可达会让整个 boot 失败，而不只是一次调用失败。
+
+因此这里 `ACTIVE` 的含义是「已绑定到机器人」，而不是「已可导航」；权重或云端的问题
+会由 `navigate` 以 `accepted=false` 加诊断信息返回。`status`、`cancel`、`telemetry`
+在没有运行时的情况下也能应答。
 
 `step_size_m` 与 `turn_angle_deg` 必须等于底盘 primitive 自己的增量。`chassis/move`
 携带请求的幅值，一个规范的 primitive 会拒绝偏离过大的命令，而不是走一段和策略认知
@@ -216,9 +242,9 @@ Skill 在 boot 后保持 `INACTIVE` 是设计使然：`CMD_INIT` 只做配置校
 ### 没有硬件时怎么验证部署
 
 [tests/harness/](tests/harness/) 里有一个合成机体（`mock_robot`）和一份本地部署清单，
-因此 `rbnx boot` 和完整的 skill 往返可以在没有仿真器、没有权重、没有 GPU 的机器上跑通
-—— 只需要 ROS 2。它验证的是接线：约定解析、图像解码、`chassis/move` 往返、惰性激活、
-状态轮询、取消。它的帧是合成梯度，所以不反映任何导航质量。
+因此 `rbnx boot` 和完整的 navigate 往返可以在没有仿真器、没有权重、没有 GPU 的机器上
+跑通 —— 只需要 ROS 2。它验证的是接线：约定解析、图像解码、`chassis/move` 往返、
+生命周期迁移、状态轮询、取消。它的帧是合成梯度，所以不反映任何导航质量。
 
 无 root 时，ROS 2 可以通过 RoboStack 装进 conda 环境：
 
@@ -270,8 +296,8 @@ OpenVLA、π0、π0.5、π0-FAST、StreamVLN 等模型不列为已支持。新�
 这条完整 CPU 路径不需要模型权重、仿真数据或 GPU：
 
 ```bash
-git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
-cd skill-compute-optimization-rbnx
+git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
+cd service-navigation-vln-rbnx
 
 conda create -n robonix-compute python=3.10 -y
 conda activate robonix-compute
@@ -355,8 +381,8 @@ PyTorch 与 FlashAttention 必须匹配 CUDA 和设备软件栈。Orin/Thor 应�
 ### 1.1 创建环境
 
 ```bash
-git clone https://github.com/i6bimua/skill-compute-optimization-rbnx.git
-cd skill-compute-optimization-rbnx
+git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
+cd service-navigation-vln-rbnx
 export ROBONIX_COMPUTE_ROOT="$(pwd)"
 
 conda create -n robonix-compute python=3.10 -y
@@ -851,13 +877,13 @@ REVERIE proxy 不包含 object grounding、RGS 或 RGSPL，不能称为完整 RE
 ## 🗂️ 仓库结构
 
 ```text
-skill-compute-optimization-rbnx/
+service-navigation-vln-rbnx/
 ├── package_manifest.yaml          # rbnx 与 catalog 读取的 RoboNix 包声明
 ├── CAPABILITY.md                  # 供 Pilot LLM 阅读的能力说明书
 ├── config.spec                    # 全部配置字段的文档
 ├── capabilities/
 │   ├── *.v1.toml                  # 本包提供的五个契约
-│   └── lib/compute_optimization/srv/   # 四个 MCP 工具的 ROS 2 IDL
+│   └── lib/navigation_vln/srv/    # 四个 MCP 工具的 ROS 2 IDL
 ├── .github/workflows/ci.yml       # Python 矩阵、CLI、文档、审计与构建
 ├── robonix_compute/
 │   ├── benchmark_data.py          # 授权数据集完整性检查
@@ -865,7 +891,7 @@ skill-compute-optimization-rbnx/
 │   ├── edge/                      # S1 运行时、切换器与超时处理
 │   ├── common/                    # 消息、缓存、序列化与遥测
 │   ├── eval/                      # Habitat adapter 与策略定义
-│   ├── rbnx/                      # RoboNix Skill provider（注册到 Atlas）
+│   ├── rbnx/                      # RoboNix Service provider（注册到 Atlas）
 │   ├── robonix/                   # 外部 HTTP Skill 边界
 │   └── cli/                       # robonix-compute-* 命令
 ├── benchmarks/r2r_ce/
@@ -877,11 +903,11 @@ skill-compute-optimization-rbnx/
 ├── examples/                      # Mock 与 InternNav JSON 配置
 ├── scripts/                       # build/start/stop 入口，以及发布检查
 └── tests/
-    ├── unit/ · integration/       # 运行时与 skill 边界的测试覆盖
+    ├── unit/ · integration/       # 运行时与 service 边界的测试覆盖
     └── harness/                   # 合成机器人 + 部署清单（不发布）
 ```
 
-`robonix_compute/` 是可直接导入的规范实现，对外有两条边界：`rbnx/`（RoboNix Skill provider）与 `robonix/`（独立 HTTP API），二者包裹同一个 `EdgeRuntime`。其余顶层目录提供 Benchmark、配置与验证工作流。
+`robonix_compute/` 是可直接导入的规范实现，对外有两条边界：`rbnx/`（RoboNix Service provider）与 `robonix/`（独立 HTTP API），二者包裹同一个 `EdgeRuntime`。其余顶层目录提供 Benchmark、配置与验证工作流。
 
 <a id="roadmap"></a>
 ## 🗺️ 路线图
@@ -986,12 +1012,12 @@ python3 -m build
 如果本 Tool 对你的工作有帮助，欢迎为仓库点亮 Star 并引用：
 
 ```bibtex
-@software{robonix_compute_optimization_skill_2026,
+@software{robonix_compute_optimization_2026,
   author  = {Cao, Hangyu and Zheng, Zihao},
-  title   = {RoboNix Compute Optimization Skill},
+  title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.1.0},
-  url     = {https://github.com/i6bimua/skill-compute-optimization-rbnx}
+  version = {0.3.0},
+  url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```
 

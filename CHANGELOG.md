@@ -2,6 +2,84 @@
 
 All notable public changes are recorded here.
 
+## 0.3.0 — 2026-07-27
+
+Re-published as a **service**. Every contract id changed, so this release is not
+drop-in for a 0.2.0 deployment manifest.
+
+### Changed — BREAKING
+
+- package renamed `robonix.skill.compute_optimization` -> `robonix.service.navigation.vln`,
+  and the provider is now `Service(id="navigation_vln", …)` under
+  `robonix/service/navigation/vln`. Contract ids move with it:
+
+  | 0.2.0 | 0.3.0 |
+  | --- | --- |
+  | `robonix/skill/compute_optimization/driver` | `robonix/service/navigation/vln/driver` |
+  | `robonix/skill/compute_optimization/navigate` | `robonix/service/navigation/vln/navigate` |
+  | `robonix/skill/compute_optimization/navigate/status` | `robonix/service/navigation/vln/navigate/status` |
+  | `robonix/skill/compute_optimization/navigate/cancel` | `robonix/service/navigation/vln/navigate/cancel` |
+  | `robonix/skill/compute_optimization/telemetry` | `robonix/service/navigation/vln/telemetry` |
+
+  Requested in review on the package-catalog submission
+  ([syswonder/robonix-package-catalog#9](https://github.com/syswonder/robonix-package-catalog/pull/9)):
+  `compute_optimization` names an implementation technique rather than the
+  capability a user deploys, and baking it into every public contract id makes
+  the mechanism permanent. The taxonomy also matched: a skill in this catalog
+  sequences other services — `skill-explore-rbnx` consumes
+  `robonix/service/navigation/*` and never touches a chassis — whereas this
+  package owns a long-running runtime and drives `chassis/move` directly. That
+  is the service boundary, and it makes this the instruction-following sibling
+  of `robonix.service.navigation` (Nav2), whose goal is a metric `PoseStamped`.
+
+  compute-optimization, dual-system and cloud-edge remain where they describe the
+  mechanism: tags, telemetry field names, the `robonix_compute` module tree, the
+  `robonix-compute-*` commands and this documentation.
+
+- deployment manifests must move the instance from the `skill:` section to
+  `service:`, and rename it to `navigation_vln` to match `Service(id=…)`.
+- `capabilities/lib/compute_optimization/srv/` -> `capabilities/lib/navigation_vln/srv/`,
+  so codegen now emits `navigation_vln_mcp` instead of `compute_optimization_mcp`.
+- `on_activate` no longer builds the compute runtime. Lazy activation is a skill
+  property — both `rbnx` and the executor gate it on a `robonix/skill` namespace
+  — so a service receives `CMD_ACTIVATE` during `rbnx boot`. Loading the
+  checkpoints there would have made GPU memory and a reachable cloud host
+  boot-time requirements of every deployment that merely lists this package, and
+  a cloud outage would fail the boot rather than the call. `on_activate` now
+  binds the camera / pose / chassis contracts only; the runtime is acquired by
+  `_ensure_compute_ready()` on the first `navigate`, which reports a setup
+  failure as `accepted=false` with a diagnosis. `status`, `cancel` and
+  `telemetry` deliberately do not trigger it — the executor polls status
+  immediately after a rejected navigate.
+- `on_deactivate` now also releases the wiring. Its early-return guard tested
+  `active` alone, which after boot (wired, not yet active) would have skipped
+  destroying the subscriptions and closing the chassis channel.
+- pip distribution renamed `robonix-compute-optimization-skill` ->
+  `robonix-compute-optimization`; the import package `robonix_compute` is
+  unchanged.
+- repository renamed `skill-compute-optimization-rbnx` ->
+  `service-navigation-vln-rbnx`. Every self-referencing URL moved with it: the
+  CI badge, the clone commands, `pyproject.toml`'s project URLs, `CITATION.cff`
+  and the BibTeX entry. GitHub redirects the old path, so existing `url:` entries
+  keep resolving, but the catalog entry names the new one.
+- documentation no longer calls this package a skill: the README title, the
+  `CITATION.cff` / BibTeX title and the `robonix_compute` docstrings drop the
+  `-Skill` suffix from the project name, and "What the Skill Optimizes" is now
+  "What the Runtime Optimizes". The benchmark method label `Compute Skill` is
+  deliberately unchanged — it is published data, appearing in
+  `benchmarks/r2r_ce/results/*.csv`, `metadata.yaml`, `render_results.py` and the
+  generated figures, and renaming it would desynchronize the tables from the
+  artifacts they cite.
+
+### Removed
+
+- `[semantics] user_invocable` from the contract TOMLs. The string appears
+  nowhere in the robonix source tree: pilot lists every provider shipping a
+  non-empty `CAPABILITY.md` and tags those whose kind is `skill`; it never reads
+  the flag. The test that asserted it has been replaced by one that checks every
+  declared capability is actually registered by a `@service.mcp` handler — a
+  contract declared on atlas but unserved fails only after a consumer connects.
+
 ## 0.2.0 — 2026-07-25
 
 ### Added

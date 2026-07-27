@@ -1,17 +1,24 @@
-# Lifecycle interface every skill MUST declare.
+# Lifecycle interface every provider MUST declare.
 #
-# `rbnx boot` sends Driver(CMD_INIT, config_json) against this contract after
-# the skill process registers with atlas, then STOPS — skills stay at
-# INACTIVE. The executor fires CMD_ACTIVATE just-in-time on the first MCP
-# call, which is when on_activate resolves the camera/chassis contracts and
-# builds the EdgeRuntime (model load, cloud connection, rclpy thread).
+# `rbnx boot` sends Driver(CMD_INIT, config_json) against this contract once the
+# process registers with atlas, and — because this is a service, not a skill —
+# follows immediately with CMD_ACTIVATE. Lazy activation is a skill property:
+# both rbnx and the executor gate it on the namespace starting with
+# `robonix/skill`, so a service is activated eagerly at boot.
 #
-# Without this contract the on_init handler never fires and every MCP call
-# returns "skill not initialized".
+# on_init parses and validates config. on_activate resolves the camera / pose /
+# chassis contracts and subscribes; rbnx has already blocked on soma stage 1 by
+# then, so every primitive is ACTIVE. The compute runtime (checkpoints, cloud
+# System-2 link) is NOT acquired here — it loads on the first navigate call, so
+# a deployment that merely lists this package needs neither a GPU nor a
+# reachable cloud host in order to boot.
+#
+# Without this contract the on_init handler never fires and every call returns
+# "not initialized".
 [contract]
-id      = "robonix/skill/compute_optimization/driver"
+id      = "robonix/service/navigation/vln/driver"
 version = "1"
-kind    = "skill"
+kind    = "service"
 idl     = "lifecycle/srv/Driver.srv"
 
 [mode]

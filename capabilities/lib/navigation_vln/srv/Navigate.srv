@@ -1,6 +1,6 @@
-# robonix/skill/compute_optimization/navigate — start a vision-language navigation run.
+# robonix/service/navigation/vln/navigate — start a vision-language navigation run.
 #
-# The skill closes the loop itself: it reads RGB-D + pose from the camera and
+# The service closes the loop itself: it reads RGB-D + pose from the camera and
 # chassis primitives, asks cloud S2 for a semantic latent when the edge
 # runtime decides one is needed, runs edge S1 to get discrete actions, and
 # issues them as bounded chassis/move commands. Returns a run_id
@@ -10,6 +10,6 @@ string instruction     # required: natural-language route description, e.g.
 float32 timeout_s      # wall-clock ceiling for the whole run; 0 = use config.timeout_s
 uint32 max_steps       # cap on control steps; 0 = use config.max_steps
 ---
-bool accepted          # false if a run is already active or the skill is not ready
+bool accepted          # false if a run is active, or the runtime could not be built
 string run_id          # uuid handle; empty when accepted=false. Pass to status/cancel/telemetry.
 string message         # human-readable detail

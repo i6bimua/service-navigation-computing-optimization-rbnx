@@ -1,19 +1,20 @@
-# robonix/skill/compute_optimization/navigate/cancel — abort the active navigation run.
+# robonix/service/navigation/vln/navigate/cancel — abort the active navigation
+# run.
 #
 # Stops the observe/infer/act loop before the next chassis/move is issued.
-# Idempotent: cancelling an already-finished run returns ok=true with a
-# "no-op" message. Does NOT itself brake the chassis — chassis/move is a
-# bounded single-shot command, so the in-flight burst completes and no
-# further commands follow.
+# Idempotent: cancelling an already-finished run returns ok=true with a "no-op"
+# message. Does NOT itself brake the chassis — chassis/move is a bounded
+# single-shot command, so the in-flight burst completes and no further commands
+# follow.
+#
+# Required alongside the status sibling for `navigate` to be treated as async;
+# like status, it answers without a loaded runtime.
 [contract]
-id      = "robonix/skill/compute_optimization/navigate/cancel"
+id      = "robonix/service/navigation/vln/navigate/cancel"
 version = "1"
-kind    = "skill"
-idl     = "compute_optimization/srv/CancelNavigate.srv"
+kind    = "service"
+idl     = "navigation_vln/srv/CancelNavigate.srv"
 description = "Cancel a navigation run."
 
 [mode]
 type = "rpc"
-
-[semantics]
-user_invocable = true

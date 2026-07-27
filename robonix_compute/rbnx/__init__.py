@@ -1,7 +1,7 @@
-"""Robonix package layer for robonix.skill.compute_optimization.
+"""Robonix package layer for robonix.service.navigation.vln.
 
 This subpackage is the Robonix-native boundary: it registers the compute
-runtime with Atlas as a Skill provider, exposes the navigate / status /
+runtime with Atlas as a Service provider, exposes the navigate / status /
 cancel / telemetry contracts as MCP tools, and drives a real chassis through
 `robonix/primitive/chassis/move`.
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MulanPSL-2.0
 #
-# Build phase for robonix.skill.compute_optimization.
+# Build phase for robonix.service.navigation.vln.
 #
 # Pure Python skill — no colcon, no vendored ROS packages, no docker image.
 # The only mandatory step is codegen: `@skill.mcp` handlers are typed against the
 # Request/Response dataclasses generated from
-# capabilities/lib/compute_optimization/srv/*.srv, so `--mcp` is required rather
+# capabilities/lib/navigation_vln/srv/*.srv, so `--mcp` is required rather
 # than optional. Output lands in rbnx-build/codegen/{proto_gen,robonix_mcp_types},
 # which robonix-api puts on sys.path automatically at import time.
 #
@@ -24,21 +24,21 @@ cd "$PKG"
 
 CLEAN="${RBNX_BUILD_CLEAN:-}"
 if [[ "$CLEAN" == "1" ]]; then
-    echo "[compute_optimization/build] clean: removing rbnx-build/"
+    echo "[navigation_vln/build] clean: removing rbnx-build/"
     rm -rf rbnx-build
 fi
 mkdir -p rbnx-build
 
 # ── 1. Codegen (required) ──────────────────────────────────────────────────
 if ! command -v rbnx >/dev/null 2>&1; then
-    echo "[compute_optimization/build] ERR: rbnx not on PATH." >&2
-    echo "[compute_optimization/build]   install robonix-cli and run 'rbnx setup <robonix-source-root>' once." >&2
+    echo "[navigation_vln/build] ERR: rbnx not on PATH." >&2
+    echo "[navigation_vln/build]   install robonix-cli and run 'rbnx setup <robonix-source-root>' once." >&2
     exit 1
 fi
 
 FLAGS=(--mcp)
 [[ "$CLEAN" == "1" ]] && FLAGS+=(--clean)
-echo "[compute_optimization/build] rbnx codegen ${FLAGS[*]}"
+echo "[navigation_vln/build] rbnx codegen ${FLAGS[*]}"
 rbnx codegen -p "$PKG" "${FLAGS[@]}"
 
 # ── 2. Runtime dependency check (advisory) ─────────────────────────────────
@@ -47,7 +47,7 @@ rbnx codegen -p "$PKG" "${FLAGS[@]}"
 # ROS_PYTHON is resolved.
 RUNTIME_PY="${ROS_PYTHON:-python3}"
 if command -v "$RUNTIME_PY" >/dev/null 2>&1 || [[ -x "$RUNTIME_PY" ]]; then
-    echo "[compute_optimization/build] runtime interpreter: $RUNTIME_PY"
+    echo "[navigation_vln/build] runtime interpreter: $RUNTIME_PY"
     "$RUNTIME_PY" - <<'PY' || true
 import importlib.util as u
 
@@ -61,11 +61,11 @@ groups = {
 for label, mods in groups.items():
     absent = [m for m in mods if u.find_spec(m) is None]
     if absent:
-        print(f"[compute_optimization/build] WARN: missing ({label}): {', '.join(absent)}")
+        print(f"[navigation_vln/build] WARN: missing ({label}): {', '.join(absent)}")
 PY
 else
-    echo "[compute_optimization/build] WARN: ROS_PYTHON=$RUNTIME_PY is not executable; skipping dependency check"
+    echo "[navigation_vln/build] WARN: ROS_PYTHON=$RUNTIME_PY is not executable; skipping dependency check"
 fi
 
 touch "$PKG/rbnx-build/.rbnx-built"
-echo "[compute_optimization/build] done."
+echo "[navigation_vln/build] done."

@@ -1,4 +1,4 @@
-"""RoboNix-facing interface layer for RoboNix-Compute-Optimization-Skill."""
+"""RoboNix-facing interface layer for RoboNix Compute Optimization."""
 
 from robonix_compute.robonix.skill import RoboNixComputeSkill
 

@@ -11,42 +11,39 @@
 #     <habitat-env>/bin/python <repo>/tests/harness/habitat_bridge/serve.py \
 #     --port 8799 --root . --root <tree holding vis_analyze_new>
 #
-# Still a harness: it exercises the skill against real imagery and makes no
-# metric claims. SR/SPL come from InternNav's evaluator.
+# This exercises the whole Robonix path against real imagery — contract
+# declaration and resolution, ROS image decode, chassis/move gRPC round-trip,
+# lifecycle transitions, status polling, cancel — with the real MP3D-CE geometry
+# and action space behind it.
 #
-# Brings up the compute-optimization skill against the synthetic mock_robot body
-# so the whole Robonix path can be exercised on a machine with no simulator, no
-# checkpoints and no GPU: contract declaration and resolution, ROS image decode,
-# chassis/move gRPC round-trip, lazy skill activation, status polling, cancel.
+# What it does NOT do: measure navigation. It makes no metric claims, and its
+# episode loop is this service's, not the benchmark's. Every published R2R-CE
+# number (SR/SPL, step latency) comes from InternNav's evaluator, which owns its
+# own loop and metrics — see the repository README.
 #
-# What this does NOT do: measure navigation. mock_robot's frames carry no
-# semantic content. Benchmark numbers (R2R-CE SR/SPL, step latency) come from the
-# InternNav Habitat harness, which owns its own episode loop and metrics —
-# see the repository README.
-#
-# Bring-up (from this directory):
+# Bring-up (from this directory, after the bridge above is serving):
 #   # 1. Cloud S2. `mock` is CPU-only and needs no weights.
 #   robonix-compute-cloud --mode mock --port 8765 &
 #   # 2. Deployment. Needs rclpy: source a ROS 2 overlay, or set ROS_PYTHON to a
 #   #    RoboStack env interpreter (see ../mock_robot/scripts/start.sh).
-#   rbnx build -f robonix_manifest.yaml
-#   rbnx boot  -f robonix_manifest.yaml
-#   rbnx caps -v      # mock_robot ACTIVE, compute_optimization INACTIVE
-#   rbnx tools        # the four robonix/skill/compute_optimization/* tools
+#   rbnx build -f robonix_manifest.habitat.yaml
+#   rbnx boot  -f robonix_manifest.habitat.yaml
+#   rbnx caps -v      # mock_robot and navigation_vln both ACTIVE
+#   rbnx tools        # the four robonix/service/navigation/vln/* tools
 #   rbnx chat         # "walk down the hallway and stop at the kitchen door"
-#   rbnx shutdown -f robonix_manifest.yaml
+#   rbnx shutdown -f robonix_manifest.habitat.yaml
 #
 # INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
-# compute_optimization.step_size_m / turn_angle_deg. The body rejects a command
+# navigation_vln.step_size_m / turn_angle_deg. The body rejects a command
 # more than 50% off its own increment rather than silently travelling a different
 # distance. tests/unit/test_rbnx_contract_closure.py asserts this.
 manifestVersion: 1
-name: robonix-compute-optimization-habitat-verification
+name: robonix-navigation-vln-habitat-verification
 
 catalog:
-  name: robonix.robot.testing.compute_optimization_habitat
+  name: robonix.robot.testing.navigation_vln_habitat
   version: "0.1.0"
-  description: Local verification deployment driving the compute-optimization skill against real Habitat imagery through the bridge; not a published robot.
+  description: Local verification deployment driving the instruction-following navigation service against real Habitat imagery through the bridge; not a published robot.
   license: "MulanPSL-2.0"
   tags: [robot, deploy, testing, fixture, cloud-edge]
   maintainers:
@@ -88,8 +85,10 @@ system:
   atlas:
     listen: 127.0.0.1:50051
     log: info
-  # The executor is what fires CMD_ACTIVATE on a skill's first MCP call and
-  # polls navigate/status to a terminal state, so it is required here.
+  # The executor is what recognises navigate as async (it needs both the
+  # status and cancel siblings) and polls navigate/status to a terminal
+  # state, so it is required here. It does NOT activate this package:
+  # just-in-time activation is gated on a robonix/skill namespace.
   executor:
     listen: 127.0.0.1:50061
     log: info
@@ -114,10 +113,13 @@ primitive:
       turn_angle_deg: 15.0
       sensor_hz: 10.0
 
-skill:
-  # Skills stay INACTIVE after boot; the executor activates this one on the
-  # first MCP call, which is when the cloud link opens.
-  - name: compute_optimization
+service:
+  # Activated by `rbnx boot` itself, after soma stage 1 has brought mock_robot to
+  # ACTIVE — services are not lazy the way skills are. The cloud link still opens
+  # on the first navigate call.
+  #
+  # `name` must equal Service(id=...) in robonix_compute/rbnx/provider.py.
+  - name: navigation_vln
     path: ../../..
     config:
       # `mock` is CPU-only and needs no checkpoints. `internnav` additionally
@@ -130,7 +132,7 @@ skill:
       turn_angle_deg: 15.0
       # Both point at the one fixture instance here. On a real robot the camera
       # and chassis are separate primitives with different names, and binding
-      # them explicitly is what stops the skill picking the wrong one once a
+      # them explicitly is what stops the service picking the wrong one once a
       # deployment has more than one candidate per contract.
       camera_provider_id: mock_robot
       chassis_provider_id: mock_robot

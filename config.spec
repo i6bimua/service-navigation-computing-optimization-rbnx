@@ -1,4 +1,4 @@
-# Runtime config accepted by the compute-optimization skill.
+# Runtime config accepted by robonix.service.navigation.vln.
 #
 # This file documents the mapping passed as this package's `config:` value in
 # a deployment `robonix_manifest.yaml`, delivered to on_init through
@@ -20,7 +20,10 @@ config:
   #               Isolates transport behaviour from model behaviour.
   #   internnav — real InternVLA-N1 dual-system. Requires checkpoints under
   #               model_dir / s1_model_dir, a CUDA device, and InternNav
-  #               importable. Anything missing makes CMD_INIT fail.
+  #               importable. These are NOT checked at CMD_INIT or
+  #               CMD_ACTIVATE: the runtime is built on the first navigate
+  #               call, so anything missing is reported there as
+  #               accepted=false with a diagnosis, and boot still succeeds.
   mode: mock
 
   # ── Cloud System-2 endpoint ────────────────────────────────────────────
@@ -69,16 +72,19 @@ config:
   timeout_s: 300.0
   # integer, default: 500. Control-step ceiling for one navigate run.
   max_steps: 500
-  # float seconds, default: 10.0. How long on_activate waits for the first
-  # RGB/depth frame before reporting the observation source unavailable.
+  # float seconds, default: 10.0. How long a navigate call waits for the first
+  # RGB/depth/pose frame before rejecting the run as "observation not ready".
+  # Subscriptions are opened at CMD_ACTIVATE, so on a live deployment the
+  # buffer is usually already full and this never elapses.
   observation_timeout_s: 10.0
 
   # ── Dependency disambiguation ──────────────────────────────────────────
-  # The skill resolves its inputs by contract id and expects exactly one
+  # The service resolves its inputs by contract id and expects exactly one
   # provider per contract. Set these when a deployment has more than one
   # candidate (two cameras, a real chassis plus a simulator) — an empty value
   # means "there is only one, find it". A wrong or absent value keeps
-  # CMD_ACTIVATE in Deferred rather than binding the wrong device.
+  # CMD_ACTIVATE in Deferred rather than binding the wrong device, which
+  # `rbnx caps -v` reports as the reason.
   # string provider instance name, default: "" (unique match required).
   camera_provider_id: ""
   # string provider instance name, default: "". Provides chassis/odom and
@@ -89,7 +95,7 @@ config:
   map_provider_id: ""
 
   # ── Pose source ────────────────────────────────────────────────────────
-  # bool, default: false. When false the skill uses raw odom-frame pose from
+  # bool, default: false. When false the service uses raw odom-frame pose from
   # robonix/primitive/chassis/odom. When true it prefers the SLAM-corrected
   # map-frame pose from robonix/service/map/pose, which is drift-free but
   # requires a mapping service in the deployment. VLN is relative-motion
@@ -116,7 +122,7 @@ config:
   # ── Key-latent switching thresholds ────────────────────────────────────
   # Visual-similarity thresholds deciding when a step is "key" enough to
   # justify a fresh cloud latent. Lower tau => synchronize more often =>
-  # fresher context, higher latency. See README "What the Skill Optimizes".
+  # fresher context, higher latency. See README "What the Service Optimizes".
   # float in (0,1), default: 0.50. Lower bound on the adaptive threshold.
   tau_lower: 0.50
   # float in (0,1), default: 0.80. Upper bound on the adaptive threshold.

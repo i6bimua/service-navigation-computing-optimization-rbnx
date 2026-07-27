@@ -15,7 +15,7 @@ from robonix_compute.model_adapters import InternNavS2Adapter, InternVLALatentPa
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Start the RoboNix-Compute-Optimization-Skill cloud-side S2 latent server.")
+    parser = argparse.ArgumentParser(description="Start the RoboNix Compute Optimization cloud-side S2 latent server.")
     parser.add_argument("--mode", choices=["mock", "internnav"], default="mock")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=env_int("ROBONIX_COMPUTE_CLOUD_PORT", 8765))

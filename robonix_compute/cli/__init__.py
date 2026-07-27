@@ -1,1 +1,1 @@
-"""Command-line entry points for RoboNix-Compute-Optimization-Skill."""
+"""Command-line entry points for RoboNix Compute Optimization."""

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MulanPSL-2.0
 #
-# Stop phase for robonix.skill.compute_optimization.
+# Stop phase for robonix.service.navigation.vln.
 #
 # The Driver shutdown handler already releases everything this package owns
 # (cancels the active run, joins the worker, closes the cloud transport, stops
@@ -18,11 +18,11 @@ PATTERN="robonix_compute.rbnx.provider"
 
 pids="$(pgrep -f -- "$PATTERN" 2>/dev/null || true)"
 if [[ -z "$pids" ]]; then
-    echo "[compute_optimization/stop] no provider process found — nothing to do"
+    echo "[navigation_vln/stop] no provider process found — nothing to do"
     exit 0
 fi
 
-echo "[compute_optimization/stop] SIGTERM to: $pids"
+echo "[navigation_vln/stop] SIGTERM to: $pids"
 # shellcheck disable=SC2086
 kill -TERM $pids 2>/dev/null || true
 
@@ -31,14 +31,14 @@ kill -TERM $pids 2>/dev/null || true
 for _ in 1 2 3 4; do
     sleep 0.5
     pgrep -f -- "$PATTERN" >/dev/null 2>&1 || {
-        echo "[compute_optimization/stop] provider exited cleanly"
+        echo "[navigation_vln/stop] provider exited cleanly"
         exit 0
     }
 done
 
 survivors="$(pgrep -f -- "$PATTERN" 2>/dev/null || true)"
 if [[ -n "$survivors" ]]; then
-    echo "[compute_optimization/stop] still alive after 2s; SIGKILL to: $survivors"
+    echo "[navigation_vln/stop] still alive after 2s; SIGKILL to: $survivors"
     # shellcheck disable=SC2086
     kill -KILL $survivors 2>/dev/null || true
 fi

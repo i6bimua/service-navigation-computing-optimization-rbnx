@@ -1,37 +1,48 @@
 # SPDX-License-Identifier: MulanPSL-2.0
 #
-# robonix.skill.compute_optimization — compute-optimized dual-system navigation.
+# robonix.service.navigation.vln — instruction-following navigation, built on a
+# compute-optimized dual-system runtime.
 #
-# kind: skill (user-invocable atomic intent). Pilot/LLM calls
-# robonix/skill/compute_optimization/navigate("<instruction>") to start; the call returns a
-# run_id and status/cancel/telemetry are sibling MCP tools.
+# kind: service. This owns a long-running navigation runtime: it consumes camera
+# and pose inputs and generates chassis actions itself, rather than sequencing
+# other services. That is the service boundary, so it lives at
+# robonix/service/navigation/vln — the instruction-following sibling of
+# robonix.service.navigation (Nav2), whose goal is a metric PoseStamped.
 #
-# Architecture: cloud S2 produces slow semantic latents, edge S1 produces
-# fast actions. The edge runtime decides per step whether a fresh latent is
-# needed (key-latent synchronization), buffers late cloud responses in a
-# pending slot, and bounds network stalls with adaptive timeout prediction.
-# See README.md for the measured R2R-CE numbers.
+# LLM-facing invocation belongs to the thin robonix.skill.navigation.vln wrapper,
+# which delegates to this service and duplicates none of the runtime below.
 #
-# The cloud S2 process is NOT a robonix package — it runs on a separate
-# machine (A100-class GPU) outside this robot deployment and is reached at
-# `cloud_host:cloud_port`. Same boundary as skill-vla-openvla-rbnx, whose
-# VLA server is likewise a config value rather than an atlas-routed
-# contract.
+# Architecture (the mechanism, deliberately not part of the capability name):
+# cloud S2 produces slow semantic latents, edge S1 produces fast actions. The
+# edge runtime decides per step whether a fresh latent is needed (key-latent
+# synchronization), buffers late cloud responses in a pending slot, and bounds
+# network stalls with adaptive timeout prediction. See README.md for the measured
+# R2R-CE numbers.
 #
-# Downstream (atlas-routed) dependencies, resolved lazily in on_activate:
+# The cloud S2 process is NOT a robonix package — it runs on a separate machine
+# (A100-class GPU) outside this robot deployment and is reached at
+# `cloud_host:cloud_port`. Same boundary as skill-vla-openvla-rbnx, whose VLA
+# server is likewise a config value rather than an atlas-routed contract.
+#
+# Downstream (atlas-routed) dependencies, resolved in on_activate:
 #   robonix/primitive/camera/rgb          (ros2, topic_out)  — observation
 #   robonix/primitive/camera/depth        (ros2, topic_out)  — observation
 #   robonix/primitive/camera/intrinsics   (ros2, topic_out)  — projection
 #   robonix/primitive/chassis/odom        (ros2, topic_out)  — pose
 #   robonix/primitive/chassis/move        (grpc, rpc)        — action output
+#
+# Services are activated at boot, so on_activate binds those contracts but does
+# NOT load checkpoints or open the cloud link; that happens on the first navigate
+# call. A deployment listing this package therefore needs neither a GPU nor a
+# reachable cloud host in order to boot.
 manifestVersion: 1
 
 package:
-  name: "robonix.skill.compute_optimization"
-  version: "0.2.0"
-  description: Compute-optimized dual-system navigation skill — cloud S2 semantic latents plus edge S1 action generation with adaptive cloud-edge synchronization.
+  name: "robonix.service.navigation.vln"
+  version: "0.3.0"
+  description: Instruction-following navigation service — cloud S2 semantic latents plus edge S1 action generation with adaptive cloud-edge synchronization.
   license: "MulanPSL-2.0"
-  tags: [skill, compute-optimization, navigation, cloud-edge, dual-system, embodied-ai]
+  tags: [service, navigation, vln, compute-optimization, cloud-edge, dual-system, embodied-ai]
   maintainers:
     - "Hangyu Cao <3087918372@qq.com>"
 
@@ -43,15 +54,15 @@ stop: bash scripts/stop.sh
 # listed here; adding a capability means bumping the version and updating
 # robonix_compute/rbnx/provider.py.
 capabilities:
-  - name: robonix/skill/compute_optimization/driver
+  - name: robonix/service/navigation/vln/driver
     path: capabilities/driver.v1.toml
-  - name: robonix/skill/compute_optimization/navigate
+  - name: robonix/service/navigation/vln/navigate
     path: capabilities/navigate.v1.toml
-  - name: robonix/skill/compute_optimization/navigate/status
+  - name: robonix/service/navigation/vln/navigate/status
     path: capabilities/status.v1.toml
-  - name: robonix/skill/compute_optimization/navigate/cancel
+  - name: robonix/service/navigation/vln/navigate/cancel
     path: capabilities/cancel.v1.toml
-  - name: robonix/skill/compute_optimization/telemetry
+  - name: robonix/service/navigation/vln/telemetry
     path: capabilities/telemetry.v1.toml
 
 depends: []

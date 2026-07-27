@@ -1,4 +1,4 @@
-"""Edge-side RoboNix-Compute-Optimization-Skill runtime."""
+"""Edge-side RoboNix Compute Optimization runtime."""
 
 from robonix_compute.edge.runtime import EdgeRuntime, EdgeRuntimeConfig
 from robonix_compute.edge.switcher import KeyLatentSwitcher, KeyLatentSwitcherConfig

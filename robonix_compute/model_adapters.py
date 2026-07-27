@@ -9,7 +9,7 @@ import numpy as np
 
 @dataclass
 class InternVLALatentPayload:
-    """Serializable latent payload exchanged between RoboNix-Compute-Optimization-Skill cloud and edge.
+    """Serializable latent payload exchanged between RoboNix Compute Optimization cloud and edge.
 
     `traj_latent` is the semantic latent produced by S2. `memory_rgb` and
     `memory_depth` are the observation frame attached to that latent; the edge
@@ -79,7 +79,7 @@ def _import_s1_input_builder():
 
 
 class InternNavS1Adapter:
-    """RoboNix-Compute-Optimization-Skill adapter for InternNav/InternVLA System-1 runners.
+    """RoboNix Compute Optimization adapter for InternNav/InternVLA System-1 runners.
 
     The wrapped runner may be:
     - `internnav.edgecloud.runners.InternVLAN1S1Runner`
@@ -144,7 +144,7 @@ class InternNavS1Adapter:
 
 
 class InternNavS2Adapter:
-    """RoboNix-Compute-Optimization-Skill adapter for InternNav/InternVLA System-2 latent runners."""
+    """RoboNix Compute Optimization adapter for InternNav/InternVLA System-2 latent runners."""
 
     def __init__(self, runner: Any):
         self.runner = runner

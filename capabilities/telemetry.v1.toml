@@ -1,23 +1,24 @@
-# robonix/skill/compute_optimization/telemetry — read the compute-optimization measurements
-# for a navigation run.
+# robonix/service/navigation/vln/telemetry — read the compute-optimization
+# measurements for a navigation run.
 #
-# This is what distinguishes this skill from a plain VLN policy: every step
+# This is what distinguishes this service from a plain VLN policy: every step
 # records whether it triggered a cloud synchronization, whether the cloud
-# response timed out, whether a stale latent was reused, and how long the
-# step took. Exposing it as a contract lets an operator (or the LLM) confirm
-# the cloud-edge split is actually paying off at runtime instead of trusting
-# offline benchmark numbers.
+# response timed out, whether a stale latent was reused, and how long the step
+# took. Exposing it as a contract lets an operator (or the LLM) confirm the
+# cloud-edge split is actually paying off at runtime instead of trusting offline
+# benchmark numbers.
+#
+# The capability is named for what it reports, not for the mechanism; the
+# mechanism's vocabulary (sync / timeout / latent reuse) stays in the field names
+# below, where it belongs.
 #
 # Fields mirror robonix_compute.common.telemetry.TelemetryRecorder.summary().
 [contract]
-id      = "robonix/skill/compute_optimization/telemetry"
+id      = "robonix/service/navigation/vln/telemetry"
 version = "1"
-kind    = "skill"
-idl     = "compute_optimization/srv/GetTelemetry.srv"
+kind    = "service"
+idl     = "navigation_vln/srv/GetTelemetry.srv"
 description = "Read cloud-edge compute optimization telemetry for a navigation run."
 
 [mode]
 type = "rpc"
-
-[semantics]
-user_invocable = true

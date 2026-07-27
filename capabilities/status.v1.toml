@@ -1,18 +1,21 @@
-# robonix/skill/compute_optimization/navigate/status — poll progress of a running navigation.
+# robonix/service/navigation/vln/navigate/status — poll progress of a running
+# navigation.
 #
 # The executor polls this every ~2s until `state` reaches a terminal value
 # (SUCCEEDED | FAILED | CANCELED | TIMEOUT); anything else is treated as
-# RUNNING, so the provider MUST emit those exact words. Pilot also calls it
-# between rounds to decide whether to keep waiting or move on.
+# RUNNING, so the provider MUST emit those exact words. Declaring both this and
+# the cancel sibling is what makes `navigate` async to the executor — declaring
+# only one is a configuration error it rejects at dispatch.
+#
+# Answers without a loaded runtime: polling must report "unknown run" even when
+# the compute core has never been built, because the executor polls right after
+# a navigate call that was itself rejected.
 [contract]
-id      = "robonix/skill/compute_optimization/navigate/status"
+id      = "robonix/service/navigation/vln/navigate/status"
 version = "1"
-kind    = "skill"
-idl     = "compute_optimization/srv/GetNavigateStatus.srv"
+kind    = "service"
+idl     = "navigation_vln/srv/GetNavigateStatus.srv"
 description = "Read the state and step progress of a navigation run."
 
 [mode]
 type = "rpc"
-
-[semantics]
-user_invocable = true

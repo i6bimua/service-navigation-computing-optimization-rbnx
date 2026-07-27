@@ -1,1 +1,1 @@
-"""Evaluation adapters for RoboNix-Compute-Optimization-Skill."""
+"""Evaluation adapters for RoboNix Compute Optimization."""

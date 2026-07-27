@@ -1,24 +1,28 @@
-# robonix/skill/compute_optimization/navigate — vision-language navigation from a natural
-# language instruction.
+# robonix/service/navigation/vln/navigate — vision-language navigation from a
+# natural-language instruction.
 #
-# User-invocable atomic intent: "walk down the hallway, turn left at the
-# painting and stop by the kitchen door". The skill closes the loop itself
-# (observe RGB-D + pose -> cloud S2 semantic latent -> edge S1 discrete
-# action -> chassis/move) rather than delegating to a navigation service:
-# VLN grounds the instruction in the live visual stream, so there is no
-# metric goal pose to hand to a planner.
+# The instruction-following counterpart to `robonix/service/navigation/navigate`
+# (Nav2), whose goal is a metric PoseStamped. There is no goal pose to hand to a
+# planner here: VLN grounds the instruction in the live visual stream, so this
+# service owns the loop itself — observe RGB-D + pose -> cloud S2 semantic
+# latent -> edge S1 discrete action -> chassis/move.
 #
-# Returns immediately with a run_id; callers poll the sibling status
-# contract and abort via cancel.
+# Example instruction: "walk down the hallway, turn left at the painting and
+# stop by the kitchen door".
+#
+# Returns immediately with a run_id; callers poll the sibling status contract
+# and abort via cancel. One run at a time.
+#
+# LLM-facing invocation belongs to the thin `robonix/skill/navigation/vln/*`
+# wrapper, which delegates here. Only a skill namespace earns pilot's `[skill]`
+# tag, and that tag is what tells the model to read CAPABILITY.md before driving
+# a start -> poll -> cancel sequence.
 [contract]
-id      = "robonix/skill/compute_optimization/navigate"
+id      = "robonix/service/navigation/vln/navigate"
 version = "1"
-kind    = "skill"
-idl     = "compute_optimization/srv/Navigate.srv"
+kind    = "service"
+idl     = "navigation_vln/srv/Navigate.srv"
 description = "Navigate by following a natural-language instruction using dual-system vision-language navigation."
 
 [mode]
 type = "rpc"
-
-[semantics]
-user_invocable = true

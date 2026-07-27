@@ -1,4 +1,4 @@
-# robonix/skill/compute_optimization/telemetry — cloud-edge compute optimization measurements.
+# robonix/service/navigation/vln/telemetry — cloud-edge compute optimization measurements.
 #
 # Every field below maps 1:1 onto
 # robonix_compute.common.telemetry.TelemetryRecorder.summary(); `summary_json`
