@@ -126,23 +126,3 @@ service:
       max_steps: 200
       timeout_s: 300.0
       action_steps_to_execute: 0
-
-skill:
-  # The LLM-facing facade. Unlike the service above it stays INACTIVE after boot
-  # — the executor activates it on the first call — which is exactly when the
-  # service it forwards to is already ACTIVE.
-  #
-  # `name` must equal Skill(id=...) in navigation_vln_skill/main.py, and must
-  # differ from the service's provider id above.
-  #
-  # Fetched by `url:` rather than a relative `path:` on purpose: this manifest
-  # ships inside the service repository, so a fresh clone has no sibling
-  # checkout to point at and a relative path would fail `rbnx build -f`. When
-  # developing both halves together, swap in:
-  #     path: ../../../../skill-navigation-vln-rbnx
-  #
-  # `config: {}` is correct with one service instance in the deployment.
-  - name: navigation_vln_skill
-    url: https://github.com/i6bimua/skill-navigation-vln-rbnx
-    branch: main
-    config: {}

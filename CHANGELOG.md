@@ -2,6 +2,35 @@
 
 All notable public changes are recorded here.
 
+## 0.3.1 — 2026-07-27
+
+Documentation and reference-deployment only; no contract or runtime change.
+
+### Changed
+
+- this service is the only entry point a deployment needs for natural-language
+  navigation, and the docs now say so. `CAPABILITY.md`, both READMEs and the
+  `package_manifest.yaml` header previously told LLM callers to prefer a thin
+  `robonix.skill.navigation.vln` wrapper deployed alongside; that advice was
+  wrong on two counts. Pilot discovers the MCP contracts a service exposes
+  directly — provider kind changes the capability-document guidance, not
+  visibility — and `navigate`, `navigate/status` and `navigate/cancel` form an
+  async contract group whose polling lifecycle the executor already owns, so a
+  caller never had to sequence start → poll → cancel itself. Deploying a
+  forwarding wrapper next to the service therefore published two equivalent
+  copies of the same four operations instead of a service/skill boundary.
+  Established in review on
+  [syswonder/robonix-package-catalog#9](https://github.com/syswonder/robonix-package-catalog/pull/9);
+  the catalog carries this service alone.
+- `tests/harness/deployment/robonix_manifest.yaml` drops its `skill:` section
+  and deploys the service by itself, which is the shape a real deployment
+  should copy.
+- corrected a claim in the 0.3.0 notes below: it said `rbnx` and the executor
+  both gate just-in-time activation on a `robonix/skill` namespace. Only the
+  executor keys on the namespace; `rbnx boot` keys on which manifest section an
+  instance is declared in. The conclusion — a service is activated during boot,
+  so `on_activate` must not load the model — is unaffected.
+
 ## 0.3.0 — 2026-07-27
 
 Re-published as a **service**. Every contract id changed, so this release is not
@@ -40,9 +69,8 @@ drop-in for a 0.2.0 deployment manifest.
   `service:`, and rename it to `navigation_vln` to match `Service(id=…)`.
 - `capabilities/lib/compute_optimization/srv/` -> `capabilities/lib/navigation_vln/srv/`,
   so codegen now emits `navigation_vln_mcp` instead of `compute_optimization_mcp`.
-- `on_activate` no longer builds the compute runtime. Lazy activation is a skill
-  property — both `rbnx` and the executor gate it on a `robonix/skill` namespace
-  — so a service receives `CMD_ACTIVATE` during `rbnx boot`. Loading the
+- `on_activate` no longer builds the compute runtime. A service is activated
+  during `rbnx boot` rather than on its first call, so loading the
   checkpoints there would have made GPU memory and a reachable cloud host
   boot-time requirements of every deployment that merely lists this package, and
   a cloud outage would fail the boot rather than the call. `on_activate` now

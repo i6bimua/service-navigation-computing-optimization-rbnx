@@ -98,6 +98,7 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="news"></a>
 ## 📰 项目动态
 
+- **2026-07-27 — v0.3.1：**自然语言导航只需要本 service 这一个入口：pilot 直接发现它的 MCP 契约，`navigate` / `status` / `cancel` 这组异步契约的轮询由 executor 驱动，因此不需要在旁边再部署任何转发用的包。文档与参考部署据此更新，契约未变。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-27 — v0.3.0：**改为以 **service** 身份发布 —— `robonix.service.navigation.vln`，即 `robonix.service.navigation`（Nav2）的指令跟随版兄弟。所有契约 ID 都变了，因此这是一个破坏性版本；契约 ID 对照表、以及为什么计算运行时改为首次调用时加载而不是 boot 时加载，见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-25 — v0.2.0：**成为可发布的 RoboNix 包 `robonix.skill.compute_optimization`：五个能力契约、注册到 Atlas 并暴露四个 MCP 工具的 provider（惰性激活）、离散动作到 `chassis/move` 的映射，以及无需硬件的接线夹具。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-19 — v0.1.0：**发布公开运行时、InternVLA-N1 DualVLN 适配器、HTTP Skill 边界、结构化 R2R-CE 结果包、授权数据门禁、严格模型/环境预检和双语复现流程。
@@ -156,13 +157,9 @@ provider、Atlas 会完成注册。能力手册见 [CAPABILITY.md](CAPABILITY.md
 | `robonix/service/navigation/vln/navigate/cancel` | MCP | 中止当前任务（幂等） |
 | `robonix/service/navigation/vln/telemetry` | MCP | 单次任务的同步/超时/复用/延迟计数 |
 
-若需要自然语言调用，请同时部署薄封装
-[`robonix.skill.navigation.vln`](https://github.com/i6bimua/skill-navigation-vln-rbnx)。
-Pilot 只给 `kind: skill` 的 provider 打 `` `[skill]` `` 标签，而那个标签正是提示 LLM
-首次调用前先读 CAPABILITY.md 的唯一机制 —— 这对我们很关键，因为 `navigate` 是
-start → poll → cancel 的多步序列，而不是一次请求。该封装自身不含任何运行时：S1/S2
-模型、云端连接、底盘连接全部留在本 service 里，无论从哪个入口进来，一个部署里都只
-存在一份。
+自然语言调用不需要额外部署任何东西：pilot 直接发现 service 上的这些 MCP 约定，
+而 `navigate`、`navigate/status`、`navigate/cancel` 构成一个异步约定组，运行任务的
+轮询生命周期由 executor 负责 —— 模型只需发起 `navigate`，随后拿到终态。
 
 观测输入与动作输出全部走标准约定，因此可以绑定到任何提供这些约定的 RoboNix
 机器人，本仓库不引入任何厂商 SDK：
@@ -1016,7 +1013,7 @@ python3 -m build
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.3.0},
+  version = {0.3.1},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```

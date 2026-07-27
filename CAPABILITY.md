@@ -245,13 +245,10 @@ that was never started reports `known=false` rather than loading a model.
 
 ## Calling this from an LLM
 
-Prefer the thin `robonix.skill.navigation.vln` wrapper, which takes the same
-instruction and delegates every call here. It exists because pilot marks only
-providers whose kind is `skill` with a `` `[skill]` `` tag, and that tag is what
-instructs the model to read a CAPABILITY.md before its first call — necessary
-here, since driving `navigate` correctly means a start → poll → cancel sequence
-rather than one request. For services pilot says reading is optional.
+Call `navigate` once with the instruction and stop there. `navigate`,
+`navigate/status` and `navigate/cancel` form an async contract group, so the
+executor takes the returned `run_id`, polls the run to a terminal state and
+reports it; the caller does not have to sequence start → poll → cancel itself.
 
-The wrapper holds no runtime of its own: the S1/S2 models, the cloud link and
-the chassis connection all live in this service, and exactly one copy of them
-exists in a deployment no matter which entry point is used.
+`telemetry` is for reading the compute-optimization counters after a run, not
+for driving one.

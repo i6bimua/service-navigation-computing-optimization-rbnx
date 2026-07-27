@@ -109,6 +109,12 @@ in [Benchmark Results](#benchmark-results).
 <a id="news"></a>
 ## 📰 News
 
+- **2026-07-27 — v0.3.1:** This service is the whole entry point for
+  natural-language navigation: pilot discovers its MCP contracts directly and
+  the executor drives the `navigate` / `status` / `cancel` group, so nothing
+  needs to be deployed alongside it to forward calls. Docs and the reference
+  deployment updated accordingly; no contract change. See
+  [CHANGELOG.md](CHANGELOG.md).
 - **2026-07-27 — v0.3.0:** Re-published as a **service** —
   `robonix.service.navigation.vln`, the instruction-following sibling of
   `robonix.service.navigation` (Nav2). Every contract id changed, so this is a
@@ -187,14 +193,11 @@ comes here.
 | `robonix/service/navigation/vln/navigate/cancel` | MCP | Abort the active run (idempotent) |
 | `robonix/service/navigation/vln/telemetry` | MCP | Per-run sync / timeout / reuse / latency counters |
 
-For natural-language invocation, deploy the thin
-[`robonix.skill.navigation.vln`](https://github.com/i6bimua/skill-navigation-vln-rbnx)
-wrapper alongside it. Pilot tags only `kind: skill` providers with `` `[skill]` ``,
-and that tag is what tells the LLM to read a CAPABILITY.md before its first
-call — which matters here, because `navigate` is a start → poll → cancel
-sequence rather than one request. The wrapper carries no runtime of its own: the
-S1/S2 models, the cloud link and the chassis connection stay in this service, and
-one copy of them exists per deployment regardless of the entry point used.
+Natural-language invocation needs nothing else deployed alongside: pilot
+discovers these MCP contracts on the service directly, and because
+`navigate`, `navigate/status` and `navigate/cancel` form an async contract
+group, the executor owns the polling lifecycle of a run — the model issues
+`navigate` and receives the terminal state.
 
 The service consumes its observations and issues its actions through standard
 contracts, so it binds to any RoboNix robot that offers them — no vendor SDK
@@ -1110,7 +1113,7 @@ and citing it:
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.3.0},
+  version = {0.3.1},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```
