@@ -128,7 +128,7 @@ service:
       action_steps_to_execute: 0
 
 skill:
-  # The LLM-facing façade. Unlike the service above it stays INACTIVE after boot
+  # The LLM-facing facade. Unlike the service above it stays INACTIVE after boot
   # — the executor activates it on the first call — which is exactly when the
   # service it forwards to is already ACTIVE.
   #

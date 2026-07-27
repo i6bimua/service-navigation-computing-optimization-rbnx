@@ -66,6 +66,11 @@ include = ["robonix_compute*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --maxfail=1"
+# `rbnx build`/`rbnx boot` write into tests/harness/, and both would break
+# collection: codegen emits proto stubs named test_msgs_pb2.py, and a `url:`
+# package in the deployment manifest is cloned whole, test suite included.
+# The first four entries are pytest's defaults, which naming this option drops.
+norecursedirs = ["*.egg", ".*", "build", "dist", "rbnx-build", "rbnx-boot"]
 markers = [
   "integration: integration tests",
   "gpu: requires CUDA/GPU",
