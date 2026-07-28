@@ -7,9 +7,10 @@
 <p><strong>An open-source compute optimization tool for RoboNix dual-system vision-language navigation</strong></p>
 <p>
   <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="#what-this-adds">What this adds</a> ·
   <a href="#demo-video">🎬 Demo Video</a> ·
   <a href="#benchmark-results">🏆 Benchmark Results</a> ·
-  <a href="#running-images">Running Images</a> ·
+  <a href="#demo-filming">Demo filming</a> ·
   <a href="#quick-start">Quick Start</a>
 </p>
 <p>
@@ -19,31 +20,67 @@
 </p>
 </div>
 
+<a id="what-this-adds"></a>
+## 🎯 What this adds to RoboNix
+
+RoboNix already has metric navigation (`robonix.service.navigation` / Nav2:
+go to a `PoseStamped`). It did **not** have a packaged, Pilot-callable service
+that follows a **natural-language route** while keeping the heavy dual-system
+VLN stack deployable on an edge robot. That is what this package is.
+
+| RoboNix gets | Detail |
+| --- | --- |
+| An instruction-following navigation **service** | `robonix.service.navigation.vln` — sibling of Nav2. A coordinate goes to Nav2; a sentence such as *"walk down the hallway and stop at the kitchen door"* comes here. |
+| Direct Pilot / Executor use | Four MCP tools: `navigate`, `navigate/status`, `navigate/cancel`, `telemetry`. Pilot discovers them on the service; the executor owns the async poll lifecycle. Nothing else has to be deployed alongside. |
+| Standard robot I/O only | Consumes `camera/{rgb,depth,intrinsics}`, chassis `odom` / map `pose`, and drives `chassis/move`. No RoboNix-core patch, no vendor SDK. |
+| A cloud–edge compute plan that fits real robots | Slow S2 semantic latents on a GPU host; fast S1 actions on the edge (~**0.60 GB** vs **16.63 GB** Edge Only). On Orin+A100 the control loop is **2.22×** faster than Edge Only at nearly the same SR, and recovers **+6.1 SR / +12.7 SPL** over Naive ECC. |
+
+**Identity.** The catalog capability is *instruction-following VLN navigation*.
+Cloud–edge scheduling, key-latent sync, and telemetry are how that capability
+stays accurate under edge memory and network limits — they are not a separate
+package users deploy.
+
+**Project boundary.** Publishable RoboNix Service (`package_manifest.yaml`,
+Atlas provider, five contracts). Cloud S2 is part of this same runtime on a
+GPU host outside the robot deployment. An HTTP lifecycle API remains for
+non-RoboNix orchestrators. See
+[RoboNix Integration Boundary](#robonix-integration-boundary).
+
 <a id="demo-video"></a>
 ## 🎬 Demo Video
 
+Each reel is one R2R-CE episode with **left = Naive ECC** and **right = Ours**;
+the HUD carries steps, per-step latency, wall clock, and the terminal verdict.
+
 <div align="center">
-  <a href="docs/assets/demo/habitat_demo.mp4">
-    <img width="100%" src="docs/assets/demo/habitat_demo.gif" alt="Habitat runtime demo">
-  </a>
+
+**1 · We succeed · they hang**
+
+<a href="docs/assets/demo/habitat_comparison_fail.mp4">
+  <img width="100%" src="docs/assets/demo/habitat_comparison_fail.gif" alt="Fail reel: Naive ECC TIMEOUT vs Ours SUCCEEDED">
+</a>
+
+<sub><a href="docs/assets/demo/habitat_comparison_fail.mp4">habitat_comparison_fail.mp4</a></sub>
+
+**2 · Both succeed · we finish first**
+
+<a href="docs/assets/demo/habitat_comparison_speed.mp4">
+  <img width="100%" src="docs/assets/demo/habitat_comparison_speed.gif" alt="Speed reel: both SUCCEEDED, Ours faster">
+</a>
+
+<sub><a href="docs/assets/demo/habitat_comparison_speed.mp4">habitat_comparison_speed.mp4</a></sub>
+
+**3 · 8×2 episode grid** — left Naive ECC · right Ours
+
+<img width="62%" src="docs/assets/demo/habitat_comparison_grid.gif" alt="8×2 Habitat comparison grid GIF">
+
 </div>
 
-RoboNix Compute Optimization provides RoboNix with an external, measured
-compute optimization module for dual-system VLN. Slow semantic reasoning runs
-on a cloud GPU, while latency-sensitive action generation stays on the edge.
-The tool combines asynchronous execution, key-latent synchronization,
-active/pending context buffering, adaptive timeout handling, and per-step
-telemetry.
-
-**Project boundary.** This repository is a publishable RoboNix **Service**
-package (`robonix.service.navigation.vln`): it ships `package_manifest.yaml`,
-its own capability contracts, and a provider that registers with Atlas and
-exposes four MCP tools. It does not modify RoboNix core — it consumes the
-standard camera and chassis contracts and adds no vendor SDK. The cloud S2 process
-is part of this same runtime rather than a separate package, and runs on a GPU
-host outside the robot deployment. The standalone HTTP API remains available for
-orchestrators that are not RoboNix deployments. See
-[RoboNix Integration Boundary](#robonix-integration-boundary).
+Older single comparison / single-lane clips:
+[habitat_comparison.mp4](docs/assets/demo/habitat_comparison.mp4) ·
+[habitat_demo.mp4](docs/assets/demo/habitat_demo.mp4).
+Rebuild with `scripts/demo/make_demo_reels.py` (fail / speed / grid) or see
+[Demo filming in Habitat](#demo-filming).
 
 <a id="results"></a>
 ## ⚡ Results
@@ -74,14 +111,17 @@ in [Benchmark Results](#benchmark-results).
 | Verify the runtime contract | `bash scripts/run_mock_compute.sh --steps 5` | CPU only; about one minute after installation |
 | Check real-model readiness | `robonix-compute-preflight ... --strict` | InternNav, Habitat, checkpoints, data, and free GPUs |
 | Reproduce a navigation run | `bash scripts/run_habitat_eval.sh` | Prepared R2R-CE/MP3D-CE environment |
+| Shoot a side-by-side Habitat demo | `bash scripts/demo/run_comparison.sh` | Dual GPU + InternNav + R2R-CE; see [Demo filming](#demo-filming) |
 | Integrate a non-RoboNix orchestrator | `robonix-compute-skill --port 8090 ...` | External client calling the HTTP lifecycle API |
 
 <a id="table-of-contents"></a>
 ## 📚 Table of Contents
 
+- [What this adds to RoboNix](#what-this-adds)
 - [Demo Video](#demo-video)
 - [News](#news)
 - [Results](#results)
+- [Demo filming in Habitat](#demo-filming)
 - [What the Runtime Optimizes](#what-the-runtime-optimizes)
 - [Architecture](#architecture)
 - [Running Images](#running-images)
@@ -138,6 +178,81 @@ in [Benchmark Results](#benchmark-results).
 - **2026-07-19 — v0.1.0:** Released the public runtime, InternVLA-N1 DualVLN
   adapter, HTTP Skill boundary, structured R2R-CE result package, licensed-data
   gate, strict model/environment preflight, and bilingual reproduction guide.
+
+<a id="demo-filming"></a>
+## 🎥 Demo filming in Habitat
+
+Demos are shot in **Habitat / R2R-CE**, not on a physical robot. The point of
+the comparison reel is that viewers can *see* two things at once: **we finish**
+when a weak cloud–edge baseline does not, and **we are faster** when both
+finish. Numbers in the HUD must come from that run's telemetry; the Orin+A100
+tables above stay the project-wide summary.
+
+### What to compare
+
+| Lane | Strategy | What the audience should notice |
+| --- | --- | --- |
+| **A · Naive ECC** | `naive_ecc` — reuse a stale latent, no key-latent switching | Slow or stuck under delay; often `FAILED` / timeout |
+| **B · Ours** | `acevln` / this service's online switcher | Same instruction & scene; shorter wall clock; `SUCCEEDED` |
+| **C · Edge Only** *(optional)* | Full dual-system on the edge (no cloud split) | Succeeds but step latency / edge memory stay high |
+
+Keep instruction, episode id, and camera view identical across lanes. Change
+only the strategy (and, when stressing A, the injected RTT).
+
+### Shot list (simple version for the filming team)
+
+1. Pick **8 episodes** from `benchmarks/r2r_ce/demo_episodes.yaml` (or run the
+   scout mode of `scripts/demo/run_comparison.sh` to fill success/fail pairs).
+2. For each episode, record **A then B** (and C if you have time) with
+   `ANALYSIS_SAVE_VIDEO=1`. Do **not** speed up the decision/motion segment;
+   only idle tails may be 2× in the edit.
+3. Burn in a fixed HUD, e.g.
+   `[A] Naive ECC · step 12 · 498 ms · 41.2 s · FAIL` vs
+   `[B] Ours · step 12 · 224 ms · 18.7 s · SUCCEEDED`.
+4. Prefer ≥4 episodes where both succeed but B is clearly faster, and ≥2 where
+   **B succeeds and A fails**.
+5. Compose the public reel with
+   `python scripts/demo/compose_side_by_side.py …` (left A / right B, endpoint
+   freeze with green/red badge).
+
+### One-command record + compose
+
+```bash
+# Paths below match a typical dual-A100 workstation; override as needed.
+export INTERNNAV_ROOT=/path/to/InternNav
+export ROBONIX_COMPUTE_DATA_ROOT=/path/to/vln_data   # contains vln_ce/, scene_data/
+export ROBONIX_COMPUTE_MODEL_DIR=/path/to/InternVLA-N1
+export ROBONIX_COMPUTE_S1_MODEL_DIR=/path/to/InternVLA-N1-S1
+export PYTHON_BIN=/path/to/conda/envs/habitat/bin/python
+
+# Record Naive ECC vs Ours for the curated episode list (writes mp4 + telemetry).
+bash scripts/demo/run_comparison.sh \
+  --episodes-file benchmarks/r2r_ce/demo_episodes.yaml \
+  --strategies naive_ecc,acevln \
+  --rtt-delay-ms 200 \
+  --output-dir outputs/demo_comparison
+
+# Hero reels from recorded lane mp4s (fail = they hang / we succeed;
+# speed = both succeed, we finish first). Optional RTT remapping / setpts
+# is fine for the public “result” clips — see make_demo_reels.py.
+python scripts/demo/make_demo_reels.py --mode fail \
+  --left  outputs/.../naive_ecc/.../0206.mp4 \
+  --right outputs/.../ours/.../0206.mp4 \
+  --out docs/assets/demo/habitat_comparison_fail.mp4
+
+python scripts/demo/make_demo_reels.py --mode speed \
+  --left  outputs/.../naive_ecc/.../0206.mp4 \
+  --right outputs/.../ours/.../0206.mp4 \
+  --out docs/assets/demo/habitat_comparison_speed.mp4
+
+# 8×2 contact-sheet GIF (TSV: left_mp4\\tright_mp4\\tlabel per line)
+python scripts/demo/make_demo_reels.py --mode grid \
+  --grid-pairs outputs/demo_grid_clips/pairs.tsv \
+  --out docs/assets/demo/habitat_comparison_grid.gif
+```
+
+Full field list, episode selection criteria, and editing rules:
+[benchmarks/r2r_ce/DEMO_FILMING.md](benchmarks/r2r_ce/DEMO_FILMING.md).
 
 <a id="what-the-runtime-optimizes"></a>
 ## 🧩 What the Runtime Optimizes

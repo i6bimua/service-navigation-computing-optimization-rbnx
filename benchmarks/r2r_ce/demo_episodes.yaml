@@ -1,0 +1,72 @@
+# Curated Habitat / R2R-CE val_unseen episodes for side-by-side demo filming.
+# Same instruction + scene must be used for every strategy lane.
+#
+# Selection goals (fill as you shoot):
+#   - >=4 episodes where both Naive ECC and Ours succeed, but Ours is clearly faster
+#   - >=2 episodes where Ours succeeds and Naive ECC fails / times out
+#   - mix of short corridors and longer multi-turn routes
+name: habitat_demo_episodes
+dataset: R2R-CE
+split: val_unseen
+lanes:
+  - id: naive_ecc
+    label: "A · Naive ECC"
+    color: "#ef4444"
+  - id: ours
+    label: "B · Ours (VLN service)"
+    color: "#22c55e"
+  - id: edge_only
+    label: "C · Edge Only"
+    color: "#94a3b8"
+    optional: true
+episodes:
+  # Existing public demo clip (runtime_demo.yaml).
+  - id: 206
+    scene_id: Z6MFQCViBuw
+    instruction: >-
+      Turn around. Walk down the long hallway until you reach the room with
+      the red canopy bed.
+    role: hero
+    notes: Already used in docs/assets/demo/habitat_demo.mp4
+  - id: 1
+    scene_id: zsNo4HB9uLZ
+    instruction: >-
+      Exit the bedroom and turn left. Walk straight passing the gray couch
+      and stop near the rug.
+    role: short
+  - id: 2
+    scene_id: zsNo4HB9uLZ
+    instruction: >-
+      Walk out of the bedroom through the open door into the hallway. Turn
+      the corner and walk into the next room.
+    role: short
+  - id: 10
+    scene_id: 2azQ1b91cZZ
+    instruction: >-
+      Walk into the living room and keep walking straight past the living
+      room. Then walk into the next area and stop.
+    role: mid
+  - id: 25
+    scene_id: zsNo4HB9uLZ
+    instruction: >-
+      Walk through the small room with a lounge chair and dresser. Turn the
+      corner and walk past the next doorway.
+    role: mid
+  - id: 50
+    scene_id: QUCTc6BB5sX
+    instruction: >-
+      Turn left and then turn right. Turn left and walk into the bedroom
+      and wait there.
+    role: mid
+  - id: 100
+    scene_id: x8F5xyUWy9e
+    instruction: >-
+      Exit massage room, turn left, go down the steps, walk to the pool,
+      climb up to steps and stop.
+    role: long
+  - id: 150
+    scene_id: QUCTc6BB5sX
+    instruction: >-
+      Turn around and walk to the end of the bed. At the end of the bed turn
+      right and walk to the doorway.
+    role: mid

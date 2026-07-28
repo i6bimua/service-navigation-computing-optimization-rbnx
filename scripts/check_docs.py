@@ -15,6 +15,7 @@ EXPLICIT_ANCHOR = re.compile(r'<a\s+id=["\']([^"\']+)["\']\s*></a>')
 def markdown_files() -> list[Path]:
     files = [ROOT / "README.md", ROOT / "README.zh-CN.md"]
     files.extend((ROOT / "benchmarks").rglob("*.md"))
+    files.extend((ROOT / "docs").rglob("*.md"))
     files.extend(
         ROOT / name
         for name in (

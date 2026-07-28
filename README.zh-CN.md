@@ -6,9 +6,10 @@
 <p><strong>面向 RoboNix 双系统视觉语言导航的开源计算优化工具</strong></p>
 <p>
   <a href="README.md">English</a> ·
+  <a href="#what-this-adds">为 RoboNix 带来了什么</a> ·
   <a href="#demo-video">🎬 演示视频</a> ·
   <a href="#benchmark-results">🏆 Benchmark 结果</a> ·
-  <a href="#running-images">运行图片</a> ·
+  <a href="#demo-filming">演示拍摄</a> ·
   <a href="#quick-start">快速开始</a>
 </p>
 <p>
@@ -18,24 +19,63 @@
 </p>
 </div>
 
+<a id="what-this-adds"></a>
+## 🎯 为 RoboNix 带来了什么
+
+RoboNix 已有坐标导航（`robonix.service.navigation` / Nav2：目标是
+`PoseStamped`），但此前**没有**一个可被 Pilot 直接调用、又能在边端机器人上部署
+的「按自然语言路线走」的服务包。本仓库补的就是这一块。
+
+| RoboNix 得到的 | 说明 |
+| --- | --- |
+| 听指令导航的 **Service** | `robonix.service.navigation.vln`，与 Nav2 是兄弟入口。有坐标走 Nav2；有一句 *"沿着走廊走到厨房门口停下"* 走这里。 |
+| Pilot / Executor 直接可用 | 四个 MCP：`navigate`、`navigate/status`、`navigate/cancel`、`telemetry`。Pilot 直接发现 service 上的契约；异步轮询由 executor 负责，旁边不必再挂包装包。 |
+| 只接标准机器人 I/O | 消费 `camera/{rgb,depth,intrinsics}`、底盘 `odom` / 地图 `pose`，输出 `chassis/move`。不改 RoboNix 核心、不绑厂商 SDK。 |
+| 能装进真机的云边计算方案 | 慢语义 S2 在云端 GPU；快动作 S1 在边端（约 **0.60 GB**，Edge Only 为 **16.63 GB**）。Orin+A100 上控制环比 Edge Only **快 2.22×** 且 SR 几乎持平，相对 Naive ECC 恢复 **+6.1 SR / +12.7 SPL**。 |
+
+**身份：**目录里登记的能力是「指令跟随 VLN 导航」。云边调度、关键 latent 同步与
+遥测是让这一能力在边端内存和网络限制下仍可用的手段，不是用户要单独部署的另一个包。
+
+**项目边界：**可发布的 RoboNix Service（`package_manifest.yaml`、Atlas provider、
+五条契约）。云端 S2 属于同一运行时，跑在机器人部署外的 GPU 主机上。HTTP 生命周期
+API 仍为非 RoboNix 编排器保留。详见
+[RoboNix 集成边界](#robonix-integration-boundary)。
+
 <a id="demo-video"></a>
 ## 🎬 演示视频
 
+每支主片都是同一个 R2R-CE episode，**左为 Naive ECC，右为 Ours**；角标给出步数、
+单步时延、墙钟时间与最终判定。
+
 <div align="center">
-  <a href="docs/assets/demo/habitat_demo.mp4">
-    <img width="100%" src="docs/assets/demo/habitat_demo.gif" alt="Habitat 运行演示">
-  </a>
+
+**1 · 我们通 · 对面挂**
+
+<a href="docs/assets/demo/habitat_comparison_fail.mp4">
+  <img width="100%" src="docs/assets/demo/habitat_comparison_fail.gif" alt="失败对照：Naive ECC TIMEOUT vs Ours SUCCEEDED">
+</a>
+
+<sub><a href="docs/assets/demo/habitat_comparison_fail.mp4">habitat_comparison_fail.mp4</a></sub>
+
+**2 · 两边都成功 · 我们更快**
+
+<a href="docs/assets/demo/habitat_comparison_speed.mp4">
+  <img width="100%" src="docs/assets/demo/habitat_comparison_speed.gif" alt="速度对照：两边 SUCCEEDED，Ours 先完成">
+</a>
+
+<sub><a href="docs/assets/demo/habitat_comparison_speed.mp4">habitat_comparison_speed.mp4</a></sub>
+
+**3 · 8×2 episode 网格** — 左 Naive ECC · 右 Ours
+
+<img width="62%" src="docs/assets/demo/habitat_comparison_grid.gif" alt="8×2 Habitat 对照网格 GIF">
+
 </div>
 
-RoboNix Compute Optimization 为 RoboNix 提供一个外部、经过测量验证的双系统 VLN 计算优化模块：慢速语义推理运行在云端 GPU，时延敏感的动作生成保留在端侧。该工具结合异步执行、关键 latent 同步、active/pending 上下文缓存、自适应超时处理和逐步遥测。
-
-**项目边界：**本仓库是一个可发布的 RoboNix Service 软件包
-（`robonix.service.navigation.vln`）：提供 `package_manifest.yaml`、自有能力
-约定，以及一个向 Atlas 注册并暴露四个 MCP 工具的 provider。它不修改 RoboNix 核心 ——
-只消费标准的相机与底盘约定，不引入任何厂商 SDK。云端 S2 属于同一套运行时而非独立
-软件包，运行在机器人部署之外的 GPU 主机上。独立的 HTTP Skill API 继续为非 RoboNix
-编排器保留。详见
-[RoboNix 集成边界](#robonix-integration-boundary)。
+旧版单条对照 / 单路片段：
+[habitat_comparison.mp4](docs/assets/demo/habitat_comparison.mp4) ·
+[habitat_demo.mp4](docs/assets/demo/habitat_demo.mp4)。
+重建用 `scripts/demo/make_demo_reels.py`（fail / speed / grid），详见
+[Habitat 演示拍摄](#demo-filming)。
 
 <a id="results"></a>
 ## ⚡ 系统效果
@@ -62,14 +102,17 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 | 验证运行时 contract | `bash scripts/run_mock_compute.sh --steps 5` | 仅 CPU；安装后约一分钟 |
 | 检查真实模型就绪状态 | `robonix-compute-preflight ... --strict` | InternNav、Habitat、权重、数据和空闲 GPU |
 | 复现导航运行 | `bash scripts/run_habitat_eval.sh` | 已准备的 R2R-CE/MP3D-CE 环境 |
+| 拍摄 Habitat 对照演示 | `bash scripts/demo/run_comparison.sh` | 双 GPU + InternNav + R2R-CE；见 [演示拍摄](#demo-filming) |
 | 接入非 RoboNix 编排器 | `robonix-compute-skill --port 8090 ...` | 调用 HTTP 生命周期 API 的外部客户端 |
 
 <a id="table-of-contents"></a>
 ## 📚 目录
 
+- [为 RoboNix 带来了什么](#what-this-adds)
 - [演示视频](#demo-video)
 - [项目动态](#news)
 - [系统效果](#results)
+- [Habitat 演示拍摄](#demo-filming)
 - [核心计算优化](#what-the-runtime-optimizes)
 - [系统架构](#architecture)
 - [运行图片](#running-images)
@@ -104,6 +147,66 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 - **2026-07-27 — v0.3.0：**改为以 **service** 身份发布 —— `robonix.service.navigation.vln`，即 `robonix.service.navigation`（Nav2）的指令跟随版兄弟。所有契约 ID 都变了，因此这是一个破坏性版本；契约 ID 对照表、以及为什么计算运行时改为首次调用时加载而不是 boot 时加载，见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-25 — v0.2.0：**成为可发布的 RoboNix 包 `robonix.skill.compute_optimization`：五个能力契约、注册到 Atlas 并暴露四个 MCP 工具的 provider（惰性激活）、离散动作到 `chassis/move` 的映射，以及无需硬件的接线夹具。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-19 — v0.1.0：**发布公开运行时、InternVLA-N1 DualVLN 适配器、HTTP Skill 边界、结构化 R2R-CE 结果包、授权数据门禁、严格模型/环境预检和双语复现流程。
+
+<a id="demo-filming"></a>
+## 🎥 Habitat 演示拍摄
+
+演示在 **Habitat / R2R-CE** 中拍摄，不依赖真机。对照片要让观众同时感到两件事：
+**我们能跑通**（弱基线失败/超时），以及 **我们更快**（两边都成功时墙钟更短）。
+HUD 数字必须来自当次运行的遥测；Orin+A100 总表仍是全量汇总，二者分开标注。
+
+### 对照轴
+
+| 路 | 策略 | 观众应看到 |
+| --- | --- | --- |
+| **A · Naive ECC** | `naive_ecc` — 复用陈旧 latent，无关键同步 | 注入延时后易卡住；常 `FAILED` / 超时 |
+| **B · Ours** | `acevln` / 本 service 的在线切换 | 同指令同场景；墙钟更短；`SUCCEEDED` |
+| **C · Edge Only**（可选） | 边端跑完整双系统（无云边拆分） | 能成功，但步延迟与边端内存仍高 |
+
+指令、episode、相机视角必须一致，只改策略（以及给 A 加压时的 RTT）。
+
+### 拍摄清单（给拍摄脚本的简单版）
+
+1. 从 `benchmarks/r2r_ce/demo_episodes.yaml` 选 **8 个 episode**（或用
+   `scripts/demo/run_comparison.sh` 的 scout 模式筛成败对）。
+2. 每个 episode 录 **先 A 后 B**（有时间再录 C），打开 `ANALYSIS_SAVE_VIDEO=1`。
+   决策与运动段保持 1×，只允许片尾空镜 2×。
+3. 固定角标，例如
+   `[A] Naive ECC · step 12 · 498 ms · 41.2 s · FAIL` 与
+   `[B] Ours · step 12 · 224 ms · 18.7 s · SUCCEEDED`。
+4. 至少 4 个两边都成功但 B 明显更快，至少 2 个 **B 成功而 A 失败**。
+5. 用 `python scripts/demo/compose_side_by_side.py …` 合成左右分屏主片。
+
+### 一条命令录制 + 合成
+
+```bash
+export INTERNNAV_ROOT=/path/to/InternNav
+export ROBONIX_COMPUTE_DATA_ROOT=/path/to/vln_data
+export ROBONIX_COMPUTE_MODEL_DIR=/path/to/InternVLA-N1
+export ROBONIX_COMPUTE_S1_MODEL_DIR=/path/to/InternVLA-N1-S1
+export PYTHON_BIN=/path/to/conda/envs/habitat/bin/python
+
+bash scripts/demo/run_comparison.sh \
+  --episodes-file benchmarks/r2r_ce/demo_episodes.yaml \
+  --strategies naive_ecc,acevln \
+  --rtt-delay-ms 200 \
+  --output-dir outputs/demo_comparison
+
+# 主片：我们通/对面挂 · 两边成功但我们更快 · 8×2 网格
+python scripts/demo/make_demo_reels.py --mode fail \
+  --left  outputs/.../naive_ecc/.../0206.mp4 \
+  --right outputs/.../ours/.../0206.mp4 \
+  --out docs/assets/demo/habitat_comparison_fail.mp4
+python scripts/demo/make_demo_reels.py --mode speed \
+  --left  outputs/.../naive_ecc/.../0206.mp4 \
+  --right outputs/.../ours/.../0206.mp4 \
+  --out docs/assets/demo/habitat_comparison_speed.mp4
+python scripts/demo/make_demo_reels.py --mode grid \
+  --grid-pairs outputs/demo_grid_clips/pairs.tsv \
+  --out docs/assets/demo/habitat_comparison_grid.gif
+```
+
+字段、选片标准与剪辑规则见 [benchmarks/r2r_ce/DEMO_FILMING.md](benchmarks/r2r_ce/DEMO_FILMING.md)。
 
 <a id="what-the-runtime-optimizes"></a>
 ## 🧩 核心计算优化

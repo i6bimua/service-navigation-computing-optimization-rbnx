@@ -34,7 +34,7 @@ wandb/
 *.npy
 *.npz
 *.mp4
-!docs/assets/demo/habitat_demo.mp4
+!docs/assets/demo/*.mp4
 *.tar.gz
 *.zip
 
