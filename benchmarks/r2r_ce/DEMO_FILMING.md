@@ -85,7 +85,7 @@ Telemetry-faithful side-by-side (one episode):
 $PYTHON_BIN scripts/demo/compose_side_by_side.py \
   --run-dir outputs/demo_comparison \
   --episode 206 \
-  --out docs/assets/demo/habitat_comparison.mp4
+  --out outputs/demo_comparison/habitat_comparison.mp4
 ```
 
 Public **result** reels (fail / speed / 8×2 grid). Remapping with `setpts` and
@@ -131,18 +131,18 @@ Ship three assets under `docs/assets/demo/`:
 2. `habitat_comparison_speed.mp4` (+ `.gif`) — both succeed, ours finishes first.
 3. `habitat_comparison_grid.gif` — 8×2 small contact sheet for the curated list.
 
-Keep `habitat_comparison.mp4` / `habitat_demo.mp4` as secondary clips.
+Keep `habitat_demo.mp4` as the secondary single-lane clip.
 
-## Workstation notes (this lab)
+## Workstation notes
 
-A known-good layout on the dual-A100 machine:
+A known-good layout on a dual-GPU machine (one GPU per lane role):
 
 ```bash
-export INTERNNAV_ROOT=/home/iflab-zzh-intern/AceVLN_mzh/internnav-thor-codeonly/workspace/InternNav
-export ROBONIX_COMPUTE_DATA_ROOT=/home/iflab-zzh-intern/Zhihao_VLN/InternNav/data
-export ROBONIX_COMPUTE_MODEL_DIR=/home/iflab-zzh-intern/Zhihao_VLN/InternNav/checkpoints/InternVLA-N1
-export ROBONIX_COMPUTE_S1_MODEL_DIR=/home/iflab-zzh-intern/Zhihao_VLN/InternNav/checkpoints/InternVLA-N1-s1-only
-export PYTHON_BIN=/home/iflab-zzh-intern/miniconda3/envs/mzh-habitataenv/bin/python
+export INTERNNAV_ROOT="${WORKSPACE}/InternNav"
+export ROBONIX_COMPUTE_DATA_ROOT="${VLN_ASSETS}/InternNav/data"
+export ROBONIX_COMPUTE_MODEL_DIR="${VLN_ASSETS}/InternNav/checkpoints/InternVLA-N1"
+export ROBONIX_COMPUTE_S1_MODEL_DIR="${VLN_ASSETS}/InternNav/checkpoints/InternVLA-N1-s1-only"
+export PYTHON_BIN="${CONDA_PREFIX}/bin/python"   # env with Habitat + InternNav + imageio
 export ROBONIX_COMPUTE_CLOUD_GPU_ID=1
 export ROBONIX_COMPUTE_EDGE_GPU_ID=0
 ```

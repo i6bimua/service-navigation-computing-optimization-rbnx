@@ -71,10 +71,9 @@ API 仍为非 RoboNix 编排器保留。详见
 
 </div>
 
-旧版单条对照 / 单路片段：
-[habitat_comparison.mp4](docs/assets/demo/habitat_comparison.mp4) ·
+备用单路片段（无对照角标）：
 [habitat_demo.mp4](docs/assets/demo/habitat_demo.mp4)。
-重建用 `scripts/demo/make_demo_reels.py`（fail / speed / grid），详见
+主片重建用 `scripts/demo/make_demo_reels.py`（fail / speed / grid），详见
 [Habitat 演示拍摄](#demo-filming)。
 
 <a id="results"></a>
@@ -160,7 +159,7 @@ HUD 数字必须来自当次运行的遥测；Orin+A100 总表仍是全量汇总
 | 路 | 策略 | 观众应看到 |
 | --- | --- | --- |
 | **A · Naive ECC** | `naive_ecc` — 复用陈旧 latent，无关键同步 | 注入延时后易卡住；常 `FAILED` / 超时 |
-| **B · Ours** | `acevln` / 本 service 的在线切换 | 同指令同场景；墙钟更短；`SUCCEEDED` |
+| **B · Ours** | `ours` — 本 service 的在线切换 | 同指令同场景；墙钟更短；`SUCCEEDED` |
 | **C · Edge Only**（可选） | 边端跑完整双系统（无云边拆分） | 能成功，但步延迟与边端内存仍高 |
 
 指令、episode、相机视角必须一致，只改策略（以及给 A 加压时的 RTT）。
@@ -188,7 +187,7 @@ export PYTHON_BIN=/path/to/conda/envs/habitat/bin/python
 
 bash scripts/demo/run_comparison.sh \
   --episodes-file benchmarks/r2r_ce/demo_episodes.yaml \
-  --strategies naive_ecc,acevln \
+  --strategies naive_ecc,ours \
   --rtt-delay-ms 200 \
   --output-dir outputs/demo_comparison
 

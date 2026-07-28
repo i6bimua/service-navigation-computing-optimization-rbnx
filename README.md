@@ -76,11 +76,10 @@ the HUD carries steps, per-step latency, wall clock, and the terminal verdict.
 
 </div>
 
-Older single comparison / single-lane clips:
-[habitat_comparison.mp4](docs/assets/demo/habitat_comparison.mp4) ·
+Secondary single-lane clip (no comparison HUD):
 [habitat_demo.mp4](docs/assets/demo/habitat_demo.mp4).
-Rebuild with `scripts/demo/make_demo_reels.py` (fail / speed / grid) or see
-[Demo filming in Habitat](#demo-filming).
+Rebuild the reels with `scripts/demo/make_demo_reels.py` (fail / speed / grid),
+or see [Demo filming in Habitat](#demo-filming).
 
 <a id="results"></a>
 ## ⚡ Results
@@ -193,7 +192,7 @@ tables above stay the project-wide summary.
 | Lane | Strategy | What the audience should notice |
 | --- | --- | --- |
 | **A · Naive ECC** | `naive_ecc` — reuse a stale latent, no key-latent switching | Slow or stuck under delay; often `FAILED` / timeout |
-| **B · Ours** | `acevln` / this service's online switcher | Same instruction & scene; shorter wall clock; `SUCCEEDED` |
+| **B · Ours** | `ours` — this service's online switcher | Same instruction & scene; shorter wall clock; `SUCCEEDED` |
 | **C · Edge Only** *(optional)* | Full dual-system on the edge (no cloud split) | Succeeds but step latency / edge memory stay high |
 
 Keep instruction, episode id, and camera view identical across lanes. Change
@@ -228,7 +227,7 @@ export PYTHON_BIN=/path/to/conda/envs/habitat/bin/python
 # Record Naive ECC vs Ours for the curated episode list (writes mp4 + telemetry).
 bash scripts/demo/run_comparison.sh \
   --episodes-file benchmarks/r2r_ce/demo_episodes.yaml \
-  --strategies naive_ecc,acevln \
+  --strategies naive_ecc,ours \
   --rtt-delay-ms 200 \
   --output-dir outputs/demo_comparison
 

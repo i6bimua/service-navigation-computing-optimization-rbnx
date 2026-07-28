@@ -48,6 +48,8 @@ BINARY_SUFFIXES = {
 }
 ALLOWED_BINARY_PATHS = {
     "docs/assets/demo/habitat_demo.mp4",
+    "docs/assets/demo/habitat_comparison_fail.mp4",
+    "docs/assets/demo/habitat_comparison_speed.mp4",
 }
 
 SKIP_DIRS = {

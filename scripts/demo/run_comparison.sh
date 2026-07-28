@@ -119,7 +119,7 @@ make_naive_manifest() {
 lane_label() {
   case "$1" in
     naive_ecc) echo "A · Naive ECC" ;;
-    ours|acevln) echo "B · Ours (VLN service)" ;;
+    ours) echo "B · Ours (VLN service)" ;;
     edge_only) echo "C · Edge Only" ;;
     *) echo "$1" ;;
   esac
@@ -145,7 +145,7 @@ run_lane() {
       export INTERNNAV_EDGE_CLOUD_STRATEGY=naive_ecc
       export INTERNNAV_EDGE_CLOUD_SYNC_SELECTION_PATH="${manifest}"
       ;;
-    ours|acevln)
+    ours)
       unset INTERNNAV_EDGE_CLOUD_STRATEGY || true
       unset INTERNNAV_EDGE_CLOUD_SYNC_SELECTION_PATH || true
       ;;
@@ -242,4 +242,4 @@ print(f"[demo] wrote {root / 'index.json'}")
 PY
 
 echo "[demo] done. Compose with:"
-echo "  ${PYTHON_BIN} scripts/demo/compose_side_by_side.py --run-dir ${OUTPUT_DIR} --out docs/assets/demo/habitat_comparison.mp4"
+echo "  ${PYTHON_BIN} scripts/demo/compose_side_by_side.py --run-dir ${OUTPUT_DIR} --out outputs/demo_comparison/habitat_comparison.mp4"

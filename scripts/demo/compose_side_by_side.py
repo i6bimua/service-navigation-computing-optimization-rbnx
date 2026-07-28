@@ -20,7 +20,6 @@ from typing import Any
 LANE_DEFAULTS = {
     "naive_ecc": {"label": "A · Naive ECC", "badge_fail": "FAIL", "color": (239, 68, 68)},
     "ours": {"label": "B · Ours (VLN service)", "badge_ok": "SUCCEEDED", "color": (34, 197, 94)},
-    "acevln": {"label": "B · Ours (VLN service)", "badge_ok": "SUCCEEDED", "color": (34, 197, 94)},
 }
 
 
