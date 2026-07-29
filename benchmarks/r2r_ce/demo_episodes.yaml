@@ -20,14 +20,14 @@ lanes:
     color: "#94a3b8"
     optional: true
 episodes:
-  # Existing public demo clip (runtime_demo.yaml).
+  # Source episode for the existing running-image panel.
   - id: 206
     scene_id: Z6MFQCViBuw
     instruction: >-
       Turn around. Walk down the long hallway until you reach the room with
       the red canopy bed.
     role: hero
-    notes: Already used in docs/assets/demo/habitat_demo.mp4
+    notes: Used in docs/assets/demo/habitat_running_images.png
   - id: 1
     scene_id: zsNo4HB9uLZ
     instruction: >-

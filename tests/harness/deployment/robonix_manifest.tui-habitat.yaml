@@ -1,0 +1,141 @@
+# SPDX-License-Identifier: MulanPSL-2.0
+#
+# HABITAT + TRAINED POLICY DEPLOYMENT, PILOT VARIANT — not a published robot.
+#
+# The strongest local configuration: real MP3D-CE frames through the Habitat
+# bridge, the trained InternVLA-N1 dual-system policy split across cloud (S2) and
+# edge (S1), and pilot so `rbnx chat` can drive it in plain language. Because the
+# backend is `internnav` rather than a stub, actions really do reach
+# `chassis/move`, so the agent moves through the scene.
+#
+# What this still does NOT do: measure navigation. The episode loop here is this
+# service's, not the benchmark's, and one episode is not a metric. Every
+# published R2R-CE number (SR/SPL, step latency) comes from InternNav's own
+# evaluator — see the repository README.
+#
+# Bring-up (from this directory):
+#   # 1. Habitat bridge, in the Habitat py3.9 env (owns habitat.Env):
+#   cd <internnav-workspace>/InternNav
+#   INTERNNAV_HABITAT_DATA_ROOT=<data> PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+#     <habitat-env>/bin/python <repo>/tests/harness/habitat_bridge/serve.py \
+#     --port 8799 --root . --root <tree holding vis_analyze_new>
+#
+#   # 2. Cloud S2, on its own GPU. Loads the trained checkpoint, so allow minutes:
+#   PYTHONPATH=<internnav-tree>:<repo> <internnav-env>/bin/python \
+#     -m robonix_compute.cli.cloud --mode internnav \
+#     --model-dir <checkpoint> --device cuda:0 --port 8765
+#
+#   # 3. Deployment. ROS_PYTHON must import rclpy AND torch AND internnav.
+#   export ROS_PYTHON=<internnav-env>/bin/python
+#   export VLM_BASE_URL VLM_API_KEY VLM_MODEL  # set all three in your shell first
+#   rbnx build -f robonix_manifest.tui-habitat.yaml
+#   rbnx boot  -f robonix_manifest.tui-habitat.yaml
+#   rbnx chat   # use the episode's own instruction, printed by the bridge
+#
+# The edge policy is loaded lazily, on the first navigate — so the first run pays
+# the checkpoint load and later runs do not. Warm it up before timing anything.
+#
+# INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
+# navigation_vln.step_size_m / turn_angle_deg, and both MUST equal Habitat's own
+# action space (forward_step_size=0.25, turn_angle=15).
+manifestVersion: 1
+name: robonix-navigation-vln-habitat-internnav-pilot
+
+catalog:
+  name: robonix.robot.testing.navigation_vln_habitat_pilot
+  version: "0.1.0"
+  description: Local deployment driving the instruction-following navigation service with the trained dual-system policy against real Habitat imagery, with pilot for natural language; not a published robot.
+  license: "MulanPSL-2.0"
+  tags: [robot, deploy, testing, fixture, cloud-edge]
+  maintainers:
+    - "Seto <202330552461@mail.scut.edu.cn>"
+
+env:
+  RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+  ROS_DOMAIN_ID: "0"
+  # One interpreter has to satisfy rclpy (topic contracts), torch (the policy)
+  # and internnav (the dual-system runners), so it cannot be the ROS-only env.
+  ROS_PYTHON: ${ROS_PYTHON}
+  # The tree carrying `internnav.edgecloud`. PYTHONPATH beats site-packages, so
+  # this wins over any other internnav install in the interpreter.
+  PYTHONPATH: ${INTERNNAV_TREE}
+  PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
+  TOKENIZERS_PARALLELISM: "false"
+
+system:
+  atlas:
+    listen: 127.0.0.1:50051
+    log: info
+  executor:
+    listen: 127.0.0.1:50061
+    log: info
+  pilot:
+    listen: 127.0.0.1:50071
+    log: info
+    vlm:
+      upstream: ${VLM_BASE_URL}
+      api_key: ${VLM_API_KEY}
+      model: ${VLM_MODEL}
+      api_format: openai
+  liaison:
+    listen: 127.0.0.1:50081
+    log: info
+  soma:
+    listen: 127.0.0.1:50091
+    robot_yaml: soma.yaml
+
+primitive:
+  - name: mock_robot
+    config:
+      # Real MP3D-CE frames. Geometry (640x480, hfov 79) comes from the episode's
+      # own sensor config, so image_width / hfov_deg would be ignored here.
+      backend: habitat_bridge
+      bridge_host: 127.0.0.1
+      bridge_port: 8799
+      step_size_m: 0.25
+      turn_angle_deg: 15.0
+      sensor_hz: 10.0
+    path: ../mock_robot
+
+service:
+  - name: navigation_vln
+    path: ../../..
+    config:
+      # The trained policy. No allow_stub_actions: actions reach chassis/move, so
+      # the body really moves and a SUCCEEDED run means the policy stopped on its
+      # own rather than a stub reporting success.
+      mode: internnav
+      model_dir: ${INTERNVLA_N1_MODEL_PATH}
+      # The S1-only export — the small edge checkpoint a real robot ships, and
+      # what `robonix-compute-export-s1` produces. The runner detects an
+      # S1-only directory and loads just that, so the edge never materialises
+      # the full dual-system model.
+      s1_model_dir: ${INTERNVLA_N1_S1_MODEL_PATH}
+      # Cloud S2 has cuda:0; keep the edge policy off it so neither stalls the other.
+      device: cuda:1
+      cloud_host: 127.0.0.1
+      cloud_port: 8765
+      step_size_m: 0.25
+      turn_angle_deg: 15.0
+      camera_provider_id: mock_robot
+      chassis_provider_id: mock_robot
+      use_map_pose: false
+      # Long enough for a real R2R episode; generous timeout because the first
+      # run also pays the checkpoint load.
+      max_steps: 200
+      timeout_s: 1800.0
+      observation_timeout_s: 60.0
+      move_timeout_s: 30.0
+      # InternNav emits one primitive action per observed frame. The adapters
+      # retain the tail of each S1/S2 action chunk for later frames; this limit is
+      # a final guard against moving twice without re-observing.
+      action_steps_to_execute: 1
+      # The defaults (0.4 s first request, 10 s ceiling) are sized for the mock
+      # S2. A real InternVLA-N1 S2 generates up to 1024 tokens per latent, which
+      # takes seconds, so the first synchronization would always time out and the
+      # run would fail with "Cloud did not provide an initial latent". The
+      # adaptive controller predicts from RTT history after that; these only set
+      # the bounds it works inside.
+      initial_timeout_s: 60.0
+      min_timeout_s: 0.5
+      max_timeout_s: 120.0

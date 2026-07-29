@@ -42,7 +42,7 @@ class ComputeCore(Protocol):
     """The subset of `RoboNixComputeSkill` this controller drives."""
 
     def reset(self, task: str | None = ..., instruction: str | None = ...) -> dict[str, Any]: ...
-    def step(self, observation: Any) -> dict[str, Any]: ...
+    def step(self, observation: Any, *, force_sync: bool = ...) -> dict[str, Any]: ...
     def telemetry(self) -> dict[str, Any]: ...
 
 
@@ -323,7 +323,14 @@ class NavigationController:
 
                 actions = normalize_action_chunk(result.get("action"))
                 if not actions:
-                    self._finish(run, FAILED, "policy returned no action for this step")
+                    # The active context is spent: S1 had nothing left to follow.
+                    # Ask the cloud for fresh context once before giving up, which
+                    # is how the upstream dual-system loop treats this state.
+                    result = self._compute.step(observation, force_sync=True)
+                    run.steps_executed += 1
+                    actions = normalize_action_chunk(result.get("action"))
+                if not actions:
+                    self._finish(run, FAILED, "policy returned no action even after a forced cloud sync")
                     return
 
                 budget = run.limits.action_steps_to_execute

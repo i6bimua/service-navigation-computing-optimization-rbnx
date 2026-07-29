@@ -38,13 +38,16 @@ class FakeCompute:
         self.resets: list[str | None] = []
         self.step_logs: list[dict[str, Any]] = []
         self.observations: list[Any] = []
+        self.forced_syncs = 0
 
     def reset(self, task=None, instruction=None):
         self.resets.append(instruction or task)
         return {"status": "reset"}
 
-    def step(self, observation):
+    def step(self, observation, *, force_sync: bool = False):
         self.observations.append(observation)
+        if force_sync:
+            self.forced_syncs += 1
         if self.step_hook is not None:
             self.step_hook(len(self.observations))
         action = self.script.pop(0) if self.script else ACTION_STOP
@@ -278,12 +281,27 @@ def test_worker_crash_surfaces_in_status():
     assert "chassis unreachable" in snapshot["detail"]
 
 
-def test_empty_action_list_fails_the_run():
-    controller, _ = make_controller(FakeCompute([[]]))
+def test_empty_action_asks_the_cloud_for_fresh_context():
+    """An empty chunk means the active context is spent, not that the run is over.
+
+    The dual-system policy stops producing actions once it has followed the whole
+    trajectory the current latent described, so the controller asks for new
+    context before it concludes anything.
+    """
+    compute = FakeCompute([[], ACTION_STOP])
+    controller, _ = make_controller(compute)
+    run = controller.start(instruction="spent context")
+    snapshot = await_terminal(controller, run.run_id)
+    assert snapshot["state"] == SUCCEEDED
+    assert compute.forced_syncs == 1
+
+
+def test_empty_action_after_a_forced_sync_fails_the_run():
+    controller, _ = make_controller(FakeCompute([[], []]))
     run = controller.start(instruction="no action")
     snapshot = await_terminal(controller, run.run_id)
     assert snapshot["state"] == FAILED
-    assert "no action" in snapshot["detail"]
+    assert "forced cloud sync" in snapshot["detail"]
 
 
 def test_stop_runtime_cancels_and_joins():

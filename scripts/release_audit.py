@@ -47,9 +47,9 @@ BINARY_SUFFIXES = {
     ".gz",
 }
 ALLOWED_BINARY_PATHS = {
-    "docs/assets/demo/habitat_demo.mp4",
     "docs/assets/demo/habitat_comparison_fail.mp4",
     "docs/assets/demo/habitat_comparison_speed.mp4",
+    "docs/assets/demo/robonix_tui_demo.mp4",
 }
 
 SKIP_DIRS = {
@@ -80,9 +80,13 @@ REQUIRED_PATHS = {
     "benchmarks/r2r_ce/metadata.yaml",
     "docs/assets/benchmark_overview.svg",
     "docs/assets/compute_optimization_architecture.png",
-    "docs/assets/demo/habitat_demo.gif",
-    "docs/assets/demo/habitat_demo.mp4",
+    "docs/assets/demo/habitat_comparison_fail.gif",
+    "docs/assets/demo/habitat_comparison_fail.mp4",
+    "docs/assets/demo/habitat_comparison_speed.gif",
+    "docs/assets/demo/habitat_comparison_speed.mp4",
     "docs/assets/demo/habitat_running_images.png",
+    "docs/assets/demo/robonix_tui_demo.jpg",
+    "docs/assets/demo/robonix_tui_demo.mp4",
     # Robonix package surface. The package catalog CI reads
     # package_manifest.yaml from the default branch root over the GitHub API, so
     # a release missing any of these is unpublishable.

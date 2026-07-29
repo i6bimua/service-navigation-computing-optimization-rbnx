@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: If you use this software, please cite the repository and the upstream InternNav/InternVLA work.
 title: RoboNix Compute Optimization
 type: software
-version: 0.4.0
-date-released: 2026-07-27
+version: 0.4.1
+date-released: 2026-07-29
 authors:
   - family-names: Cao
     given-names: Hangyu

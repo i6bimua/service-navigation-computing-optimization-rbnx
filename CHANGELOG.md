@@ -2,6 +2,50 @@
 
 All notable public changes are recorded here.
 
+## 0.4.1 — 2026-07-29
+
+Fixes correctness defects exposed by running the trained InternVLA-N1 S1/S2
+policy through the complete RoboNix Service loop rather than through mocks.
+Capability ids and configuration compatibility are unchanged.
+
+### Fixed
+
+- the edge now executes one primitive action per observation while retaining the
+  remainder of the model's four-step action chunk. It previously handed the
+  whole chunk to the controller, which either moved repeatedly without a fresh
+  frame or discarded the tail when `action_steps_to_execute: 1` was used.
+- cloud action-only outputs are preserved and drained one per frame. This covers
+  STOP and the upstream LOOK_DOWN flow; an unsupported camera-look request is
+  resolved by a second S2 pass in the cloud instead of being sent to a
+  chassis-only robot.
+- frames consumed by S1 between cloud requests are replayed through S2's
+  `step_no_infer` path. S2 therefore keeps the same episode history and step
+  count as the moving body instead of repeatedly planning from an artificially
+  short history and failing to recognize arrival.
+- an exhausted action chunk now forces one fresh cloud synchronization before a
+  run is failed. RGB packaging is converted to the byte range expected by PIL,
+  `continuous_traj` is defined for the S1 runner, and normalized Habitat depth
+  is scaled only when the incoming values are actually in `[0, 1]`.
+- the Habitat bridge can pin an episode so comparison lanes start from the same
+  scene state across process restarts.
+
+### Added
+
+- trained-policy Pilot manifests for the complete Habitat + RoboNix TUI path,
+  including a Naive ECC baseline fixture.
+- regression coverage for action-chunk draining, action-only cloud responses,
+  LOOK_DOWN handling, S2 history replay, and forced synchronization.
+
+### Changed
+
+- the public demo set is reduced to three representative recordings:
+  Naive ECC/Ours robustness, Edge Only/Ours completion time, and the complete
+  RoboNix TUI path. Superseded grid and single-lane videos were removed.
+- both READMEs now lead with this repository's cloud–edge runtime contribution.
+  InternVLA-N1 model provenance is stated once; the remaining explanation
+  focuses on deployment, scheduling, runtime correctness, and RoboNix
+  integration.
+
 ## 0.4.0 — 2026-07-27
 
 Closes two defects found by reading this service against the executor's async

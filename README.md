@@ -23,38 +23,44 @@
 <a id="what-this-adds"></a>
 ## 🎯 What this adds to RoboNix
 
-RoboNix already has metric navigation (`robonix.service.navigation` / Nav2:
-go to a `PoseStamped`). It did **not** have a packaged, Pilot-callable service
-that follows a **natural-language route** while keeping the heavy dual-system
-VLN stack deployable on an edge robot. That is what this package is.
+This repository turns a dual-system VLN S1/S2 inference path into a
+**deployable, callable, and observable RoboNix cloud–edge navigation service**.
+S1 keeps the edge action loop moving while S2 refreshes high-level semantic
+context in the cloud; this repository owns when they communicate, how model
+history advances correctly, how timeouts and late results are handled, and how
+the runtime binds to RoboNix lifecycle and robot I/O.
 
 | RoboNix gets | Detail |
 | --- | --- |
-| An instruction-following navigation **service** | `robonix.service.navigation.vln` — sibling of Nav2. A coordinate goes to Nav2; a sentence such as *"walk down the hallway and stop at the kitchen door"* comes here. |
-| Direct Pilot / Executor use | Four MCP tools: `navigate`, `navigate/status`, `navigate/cancel`, `telemetry`. Pilot discovers them on the service; the executor owns the async poll lifecycle. Nothing else has to be deployed alongside. |
-| Standard robot I/O only | Consumes `camera/{rgb,depth,intrinsics}`, chassis `odom` / map `pose`, and drives `chassis/move`. No RoboNix-core patch, no vendor SDK. |
-| A cloud–edge compute plan that fits real robots | Slow S2 semantic latents on a GPU host; fast S1 actions on the edge (~**0.60 GB** vs **16.63 GB** Edge Only). On Orin+A100 the control loop is **2.22×** faster than Edge Only at nearly the same SR, and recovers **+6.1 SR / +12.7 SPL** over Naive ECC. |
+| A genuinely split cloud–edge runtime | Heavy S2 runs on a cloud GPU and lightweight S1 runs at the edge; the edge never has to materialize the complete dual-system model. |
+| Adaptive collaboration without blocking control | Key-latent synchronization, active/pending buffers, adaptive timeouts, and late-response absorption let S1 keep moving without consuming stale context indefinitely. |
+| Preserved closed-loop model semantics | One action is executed per observation while short-trajectory tails are retained; edge-only frames are replayed into S2 history, and S2 LOOK_DOWN / STOP actions are handled correctly. |
+| A complete RoboNix Service surface | Four MCP tools — `navigate`, `navigate/status`, `navigate/cancel`, `telemetry` — plus standard camera, pose, and chassis contracts, with no RoboNix-core patch. |
+| Measured system gains | Edge model memory is about **0.60 GB** versus **16.63 GB** for Edge Only. On Orin+A100 the control loop is **2.22×** faster at nearly the same SR, while recovering **+6.1 SR / +12.7 SPL** over Naive ECC. |
 
-**Identity.** The catalog capability is *instruction-following VLN navigation*.
-Cloud–edge scheduling, key-latent sync, and telemetry are how that capability
-stays accurate under edge memory and network limits — they are not a separate
-package users deploy.
+The concrete S1/S2 model and weights are InternVLA-N1; the rest of this document
+focuses on this repository's cloud–edge deployment, runtime correctness,
+scheduling, and RoboNix integration.
 
-**Project boundary.** Publishable RoboNix Service (`package_manifest.yaml`,
-Atlas provider, five contracts). Cloud S2 is part of this same runtime on a
-GPU host outside the robot deployment. An HTTP lifecycle API remains for
+The catalog identity is `robonix.service.navigation.vln` because the external
+RoboNix boundary is a long-running navigation service; cloud–edge compute
+optimization is its core implementation. Cloud S2 belongs to the same runtime
+on a GPU host outside the robot deployment. An HTTP lifecycle API remains for
 non-RoboNix orchestrators. See
 [RoboNix Integration Boundary](#robonix-integration-boundary).
 
 <a id="demo-video"></a>
 ## 🎬 Demo Video
 
-Each reel is one R2R-CE episode with **left = Naive ECC** and **right = Ours**;
-the HUD carries steps, per-step latency, wall clock, and the terminal verdict.
+These recordings run the trained InternVLA-N1 policy through the RoboNix
+Service control path in Habitat / R2R-CE. They are **real-policy simulation
+demos, not physical-robot validation**. The two representative reels cover
+robustness and actual task completion time without a redundant grid or
+single-lane clip.
 
 <div align="center">
 
-**1 · We succeed · they hang**
+**1 · Robustness: Naive ECC times out, Ours succeeds**
 
 <a href="docs/assets/demo/habitat_comparison_fail.mp4">
   <img width="100%" src="docs/assets/demo/habitat_comparison_fail.gif" alt="Fail reel: Naive ECC TIMEOUT vs Ours SUCCEEDED">
@@ -62,24 +68,20 @@ the HUD carries steps, per-step latency, wall clock, and the terminal verdict.
 
 <sub><a href="docs/assets/demo/habitat_comparison_fail.mp4">habitat_comparison_fail.mp4</a></sub>
 
-**2 · Both succeed · we finish first**
+**2 · Completion time: Edge Only and Ours succeed, Ours is about 2× faster**
 
 <a href="docs/assets/demo/habitat_comparison_speed.mp4">
-  <img width="100%" src="docs/assets/demo/habitat_comparison_speed.gif" alt="Speed reel: both SUCCEEDED, Ours faster">
+  <img width="100%" src="docs/assets/demo/habitat_comparison_speed.gif" alt="Speed reel: Edge Only and Ours both succeed, Ours finishes first">
 </a>
 
 <sub><a href="docs/assets/demo/habitat_comparison_speed.mp4">habitat_comparison_speed.mp4</a></sub>
 
-**3 · 8×2 episode grid** — left Naive ECC · right Ours
-
-<img width="62%" src="docs/assets/demo/habitat_comparison_grid.gif" alt="8×2 Habitat comparison grid GIF">
-
 </div>
 
-Secondary single-lane clip (no comparison HUD):
-[habitat_demo.mp4](docs/assets/demo/habitat_demo.mp4).
-Rebuild the reels with `scripts/demo/make_demo_reels.py` (fail / speed / grid),
-or see [Demo filming in Habitat](#demo-filming).
+The complete RoboNix TUI sequence — startup, instruction entry, tool invocation,
+and terminal state — appears under
+[RoboNix Integration Boundary](#robonix-integration-boundary) instead of being
+duplicated here.
 
 <a id="results"></a>
 ## ⚡ Results
@@ -151,6 +153,13 @@ in [Benchmark Results](#benchmark-results).
 <a id="news"></a>
 ## 📰 News
 
+- **2026-07-29 — v0.4.1:** Corrected the trained InternVLA-N1 service loop:
+  one action per observed frame, S2 history replay across edge-only steps,
+  action-only STOP / LOOK_DOWN handling, forced refresh after an exhausted
+  action chunk, valid RGB/depth packaging, and reproducible Habitat episode
+  pinning. The public demos are now limited to two representative Habitat
+  comparisons plus the complete RoboNix TUI path. See
+  [CHANGELOG.md](CHANGELOG.md).
 - **2026-07-27 — v0.4.0:** Two safety and liveness fixes, both breaking.
   `config.mode` is now required — it used to default to `mock`, so an
   unconfigured deployment silently got a stub policy that reported runs as
@@ -181,73 +190,41 @@ in [Benchmark Results](#benchmark-results).
 <a id="demo-filming"></a>
 ## 🎥 Demo filming in Habitat
 
-Demos are shot in **Habitat / R2R-CE**, not on a physical robot. The point of
-the comparison reel is that viewers can *see* two things at once: **we finish**
-when a weak cloud–edge baseline does not, and **we are faster** when both
-finish. Numbers in the HUD must come from that run's telemetry; the Orin+A100
-tables above stay the project-wide summary.
+The public repository keeps only three representative assets: Naive ECC/Ours
+robustness, Edge Only/Ours completion time, and the complete RoboNix TUI path.
+The first two run the real model policy in **Habitat / R2R-CE**, which is not a
+physical-robot test. The TUI recording validates invocation through Pilot and
+Executor.
 
-### What to compare
-
-| Lane | Strategy | What the audience should notice |
-| --- | --- | --- |
-| **A · Naive ECC** | `naive_ecc` — reuse a stale latent, no key-latent switching | Slow or stuck under delay; often `FAILED` / timeout |
-| **B · Ours** | `ours` — this service's online switcher | Same instruction & scene; shorter wall clock; `SUCCEEDED` |
-| **C · Edge Only** *(optional)* | Full dual-system on the edge (no cloud split) | Succeeds but step latency / edge memory stay high |
-
-Keep instruction, episode id, and camera view identical across lanes. Change
-only the strategy (and, when stressing A, the injected RTT).
-
-### Shot list (simple version for the filming team)
-
-1. Pick **8 episodes** from `benchmarks/r2r_ce/demo_episodes.yaml` (or run the
-   scout mode of `scripts/demo/run_comparison.sh` to fill success/fail pairs).
-2. For each episode, record **A then B** (and C if you have time) with
-   `ANALYSIS_SAVE_VIDEO=1`. Do **not** speed up the decision/motion segment;
-   only idle tails may be 2× in the edit.
-3. Burn in a fixed HUD, e.g.
-   `[A] Naive ECC · step 12 · 498 ms · 41.2 s · FAIL` vs
-   `[B] Ours · step 12 · 224 ms · 18.7 s · SUCCEEDED`.
-4. Prefer ≥4 episodes where both succeed but B is clearly faster, and ≥2 where
-   **B succeeds and A fails**.
-5. Compose the public reel with
-   `python scripts/demo/compose_side_by_side.py …` (left A / right B, endpoint
-   freeze with green/red badge).
-
-### One-command record + compose
+Comparison recordings must lock the same instruction, episode, and camera
+start. The Naive ECC reel changes only synchronization strategy; the Edge Only
+reel changes only placement. HUD state and wall clock come from that run rather
+than from the aggregate benchmark table.
 
 ```bash
-# Paths below match a typical dual-A100 workstation; override as needed.
 export INTERNNAV_ROOT=/path/to/InternNav
 export ROBONIX_COMPUTE_DATA_ROOT=/path/to/vln_data   # contains vln_ce/, scene_data/
 export ROBONIX_COMPUTE_MODEL_DIR=/path/to/InternVLA-N1
 export ROBONIX_COMPUTE_S1_MODEL_DIR=/path/to/InternVLA-N1-S1
 export PYTHON_BIN=/path/to/conda/envs/habitat/bin/python
 
-# Record Naive ECC vs Ours for the curated episode list (writes mp4 + telemetry).
 bash scripts/demo/run_comparison.sh \
   --episodes-file benchmarks/r2r_ce/demo_episodes.yaml \
   --strategies naive_ecc,ours \
   --rtt-delay-ms 200 \
   --output-dir outputs/demo_comparison
 
-# Hero reels from recorded lane mp4s (fail = they hang / we succeed;
-# speed = both succeed, we finish first). Optional RTT remapping / setpts
-# is fine for the public “result” clips — see make_demo_reels.py.
+# Robustness reel: Naive ECC vs Ours.
 python scripts/demo/make_demo_reels.py --mode fail \
   --left  outputs/.../naive_ecc/.../0206.mp4 \
   --right outputs/.../ours/.../0206.mp4 \
   --out docs/assets/demo/habitat_comparison_fail.mp4
 
+# Completion-time reel: Edge Only vs Ours.
 python scripts/demo/make_demo_reels.py --mode speed \
-  --left  outputs/.../naive_ecc/.../0206.mp4 \
+  --left  outputs/.../edge_only/.../0206.mp4 \
   --right outputs/.../ours/.../0206.mp4 \
   --out docs/assets/demo/habitat_comparison_speed.mp4
-
-# 8×2 contact-sheet GIF (TSV: left_mp4\\tright_mp4\\tlabel per line)
-python scripts/demo/make_demo_reels.py --mode grid \
-  --grid-pairs outputs/demo_grid_clips/pairs.tsv \
-  --out docs/assets/demo/habitat_comparison_grid.gif
 ```
 
 Full field list, episode selection criteria, and editing rules:
@@ -303,11 +280,11 @@ contracts, so `rbnx boot` starts the provider and Atlas registers it. See
 [CAPABILITY.md](CAPABILITY.md) for the capability manual and
 [config.spec](config.spec) for every config field.
 
-It is the **instruction-following sibling of `robonix.service.navigation`**
-(Nav2): both own a long-running navigation runtime and expose the same
-navigate / status / cancel triple, but Nav2's goal is a metric `PoseStamped`
-while this one's is a sentence. A coordinate goes to Nav2; a route description
-comes here.
+`navigation.vln` names the external RoboNix capability boundary: it accepts an
+instruction and manages a long-running navigation task. Our contribution is the
+cloud–edge execution behind that boundary — split S1/S2 deployment, adaptive
+synchronization, consistent model history, failure handling, and step-level
+telemetry — rather than redefining the VLN model itself.
 
 | Contract | Transport | Purpose |
 | --- | --- | --- |
@@ -316,6 +293,23 @@ comes here.
 | `robonix/service/navigation/vln/navigate/status` | MCP | Poll `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
 | `robonix/service/navigation/vln/navigate/cancel` | MCP | Abort the active run (idempotent) |
 | `robonix/service/navigation/vln/telemetry` | MCP | Per-run sync / timeout / reuse / latency counters |
+
+### Complete RoboNix TUI path
+
+The recording keeps the full `rbnx chat` sequence: startup, instruction entry,
+Pilot selecting the `navigate` tool, Executor polling, and terminal output.
+Naive ECC is on top and Ours is below; both complete the same kind of task, while
+Ours reaches a terminal result first. This validates the **RoboNix integration
+path and wall-clock completion behavior**; it does not replace the full R2R-CE
+benchmark.
+
+<div align="center">
+<a href="docs/assets/demo/robonix_tui_demo.mp4">
+  <img width="100%" src="docs/assets/demo/robonix_tui_demo.jpg" alt="RoboNix TUI: Naive ECC on top, Ours below">
+</a>
+<br>
+<sub><a href="docs/assets/demo/robonix_tui_demo.mp4">robonix_tui_demo.mp4</a> — click the image to play the full video</sub>
+</div>
 
 Natural-language invocation needs nothing else deployed alongside: pilot
 discovers these MCP contracts on the service directly, and because
@@ -1238,7 +1232,7 @@ and citing it:
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.4.0},
+  version = {0.4.1},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```

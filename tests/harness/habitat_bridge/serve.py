@@ -24,11 +24,13 @@ Protocol (both directions: 4-byte big-endian length, then a msgpack map):
     -> {"op": "info"}   <- {"ok", "intrinsics": {...}, "instruction", "episode_id", "scene"}
     -> {"op": "reset"}  <- {"ok", "rgb", "depth", "position", "yaw", "step_index", "done"}
     -> {"op": "step", "action": "move_forward"}   <- same shape as reset
+    -> {"op": "pin_episode", "episode_id": "126"}  <- {"ok", "episode_id"}
     -> {"op": "close"}  <- {"ok"}
 """
 from __future__ import annotations
 
 import argparse
+import itertools
 import logging
 import math
 import os
@@ -134,7 +136,13 @@ class HabitatEpisode:
         array = np.asarray(depth, dtype=np.float32)
         if array.ndim == 3:
             array = array[:, :, 0]
-        if self._depth_normalized:
+        # Habitat's DepthSensorConfig defaults to normalize_depth=True (unit
+        # interval). Some Habitat / InternNav builds still emit metres despite
+        # that flag; multiplying those again by max_depth (~10) turns a 2 m
+        # couch into a 20 m cliff, and S1 then clips everything to 5 m so the
+        # depth channel is a flat wall. Detect the already-metres case by the
+        # raw range rather than trusting the flag alone.
+        if self._depth_normalized and float(np.nanmax(array)) <= 1.0 + 1e-3:
             array = array * (self._depth_max - self._depth_min) + self._depth_min
         return np.ascontiguousarray(array, dtype=np.float32)
 
@@ -159,6 +167,28 @@ class HabitatEpisode:
                 "instruction": self._instruction,
                 "episode_id": self._episode_id, "scene": self._scene,
             }
+
+    def pin_episode(self, episode_id: str) -> dict:
+        """Make every later reset replay one episode.
+
+        `habitat.Env.reset()` only pulls the next item from the episode iterator,
+        so without this the sole way to reach a given episode is to reset past
+        every episode before it. Comparing two configurations needs both runs to
+        start from the same episode, and re-deriving that start by counting
+        resets is fragile. Replacing the iterator with a cycle over the wanted
+        episode makes the start reproducible across process restarts too.
+        """
+        with self._lock:
+            wanted = str(episode_id)
+            match = next(
+                (e for e in self._env.episodes if str(getattr(e, "episode_id", "")) == wanted),
+                None,
+            )
+            if match is None:
+                return {"ok": False, "error": f"episode {wanted!r} is not in this split"}
+            self._env._episode_iterator = itertools.cycle([match])
+            log.info("pinned episode %s; resets now replay it", wanted)
+            return {"ok": True, "episode_id": wanted}
 
     def reset(self) -> dict:
         with self._lock:
@@ -290,6 +320,9 @@ class _Handler(socketserver.BaseRequestHandler):
                     reply = env.call(lambda e: e.info())
                 elif op == "reset":
                     reply = env.call(lambda e: e.reset())
+                elif op == "pin_episode":
+                    wanted = str(request.get("episode_id", ""))
+                    reply = env.call(lambda e, w=wanted: e.pin_episode(w))
                 elif op == "step":
                     action = str(request.get("action", ""))
                     reply = env.call(lambda e, a=action: e.step(a))

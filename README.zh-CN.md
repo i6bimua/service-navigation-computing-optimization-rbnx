@@ -22,34 +22,37 @@
 <a id="what-this-adds"></a>
 ## 🎯 为 RoboNix 带来了什么
 
-RoboNix 已有坐标导航（`robonix.service.navigation` / Nav2：目标是
-`PoseStamped`），但此前**没有**一个可被 Pilot 直接调用、又能在边端机器人上部署
-的「按自然语言路线走」的服务包。本仓库补的就是这一块。
+本仓库把双系统 VLN 的 S1/S2 推理链路做成一套**可部署、可调用、可观测的 RoboNix
+云边协同导航 Service**：S1 在边端保持动作闭环，S2 在云端刷新高层语义上下文，而
+本仓库负责两者何时通信、如何正确推进模型历史、怎样处理超时与迟到结果，以及如何接入
+RoboNix 生命周期和机器人 I/O。
 
 | RoboNix 得到的 | 说明 |
 | --- | --- |
-| 听指令导航的 **Service** | `robonix.service.navigation.vln`，与 Nav2 是兄弟入口。有坐标走 Nav2；有一句 *"沿着走廊走到厨房门口停下"* 走这里。 |
-| Pilot / Executor 直接可用 | 四个 MCP：`navigate`、`navigate/status`、`navigate/cancel`、`telemetry`。Pilot 直接发现 service 上的契约；异步轮询由 executor 负责，旁边不必再挂包装包。 |
-| 只接标准机器人 I/O | 消费 `camera/{rgb,depth,intrinsics}`、底盘 `odom` / 地图 `pose`，输出 `chassis/move`。不改 RoboNix 核心、不绑厂商 SDK。 |
-| 能装进真机的云边计算方案 | 慢语义 S2 在云端 GPU；快动作 S1 在边端（约 **0.60 GB**，Edge Only 为 **16.63 GB**）。Orin+A100 上控制环比 Edge Only **快 2.22×** 且 SR 几乎持平，相对 Naive ECC 恢复 **+6.1 SR / +12.7 SPL**。 |
+| 真正拆开的云边运行时 | 将重型 S2 放在云端 GPU、轻量 S1 放在边端；边端不需要加载完整双系统模型。 |
+| 不阻塞控制环的自适应协同 | 关键 latent 同步、active/pending 双缓冲、自适应超时和迟到响应吸收，让 S1 可持续运行，又避免长期使用陈旧上下文。 |
+| 保持模型原始闭环语义 | 每个观测只执行一个动作，保留短轨迹余项；把边端独立执行过的帧回放给 S2，并正确处理 S2 的 LOOK_DOWN / STOP 等离散动作。 |
+| 完整的 RoboNix Service 接口 | `navigate`、`navigate/status`、`navigate/cancel`、`telemetry` 四个 MCP 工具，以及相机、位姿和底盘标准约定；不修改 RoboNix 核心。 |
+| 可量化的系统收益 | Orin+A100 上端侧模型内存约 **0.60 GB**（Edge Only 为 **16.63 GB**），控制环比 Edge Only **快 2.22×** 且 SR 几乎持平，相对 Naive ECC 恢复 **+6.1 SR / +12.7 SPL**。 |
 
-**身份：**目录里登记的能力是「指令跟随 VLN 导航」。云边调度、关键 latent 同步与
-遥测是让这一能力在边端内存和网络限制下仍可用的手段，不是用户要单独部署的另一个包。
+具体 S1/S2 模型与权重采用 InternVLA-N1；本文其余内容聚焦本仓库完成的云边部署、
+运行时正确性、调度与 RoboNix 集成。
 
-**项目边界：**可发布的 RoboNix Service（`package_manifest.yaml`、Atlas provider、
-五条契约）。云端 S2 属于同一运行时，跑在机器人部署外的 GPU 主机上。HTTP 生命周期
-API 仍为非 RoboNix 编排器保留。详见
+目录中登记为 `robonix.service.navigation.vln`，因为它对 RoboNix 暴露的是一个长期运行
+的导航 Service；云边计算优化是该 Service 的核心实现。云端 S2 属于同一运行时，运行在
+机器人部署外的 GPU 主机上。HTTP 生命周期 API 仍为非 RoboNix 编排器保留。详见
 [RoboNix 集成边界](#robonix-integration-boundary)。
 
 <a id="demo-video"></a>
 ## 🎬 演示视频
 
-每支主片都是同一个 R2R-CE episode，**左为 Naive ECC，右为 Ours**；角标给出步数、
-单步时延、墙钟时间与最终判定。
+以下视频通过 RoboNix Service 控制链路运行训练好的 InternVLA-N1，并在 Habitat /
+R2R-CE 中记录真实策略动作；这是**真实模型仿真演示，不是物理机器人实机验证**。
+两支视频分别展示鲁棒性与实际任务完成时间，不再堆叠重复网格或单路素材。
 
 <div align="center">
 
-**1 · 我们通 · 对面挂**
+**1 · 鲁棒性：Naive ECC 超时，Ours 成功**
 
 <a href="docs/assets/demo/habitat_comparison_fail.mp4">
   <img width="100%" src="docs/assets/demo/habitat_comparison_fail.gif" alt="失败对照：Naive ECC TIMEOUT vs Ours SUCCEEDED">
@@ -57,24 +60,18 @@ API 仍为非 RoboNix 编排器保留。详见
 
 <sub><a href="docs/assets/demo/habitat_comparison_fail.mp4">habitat_comparison_fail.mp4</a></sub>
 
-**2 · 两边都成功 · 我们更快**
+**2 · 完成时间：纯端侧与 Ours 均成功，Ours 约 2× 更快**
 
 <a href="docs/assets/demo/habitat_comparison_speed.mp4">
-  <img width="100%" src="docs/assets/demo/habitat_comparison_speed.gif" alt="速度对照：两边 SUCCEEDED，Ours 先完成">
+  <img width="100%" src="docs/assets/demo/habitat_comparison_speed.gif" alt="速度对照：纯端侧与 Ours 均成功，Ours 先完成">
 </a>
 
 <sub><a href="docs/assets/demo/habitat_comparison_speed.mp4">habitat_comparison_speed.mp4</a></sub>
 
-**3 · 8×2 episode 网格** — 左 Naive ECC · 右 Ours
-
-<img width="62%" src="docs/assets/demo/habitat_comparison_grid.gif" alt="8×2 Habitat 对照网格 GIF">
-
 </div>
 
-备用单路片段（无对照角标）：
-[habitat_demo.mp4](docs/assets/demo/habitat_demo.mp4)。
-主片重建用 `scripts/demo/make_demo_reels.py`（fail / speed / grid），详见
-[Habitat 演示拍摄](#demo-filming)。
+RoboNix TUI 的完整启动、指令输入、工具调用与终态演示放在
+[RoboNix 集成边界](#robonix-integration-boundary)，避免在首页重复展示同一运行。
 
 <a id="results"></a>
 ## ⚡ 系统效果
@@ -142,6 +139,11 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="news"></a>
 ## 📰 项目动态
 
+- **2026-07-29 — v0.4.1：**修正训练后 InternVLA-N1 接入完整 Service 闭环时暴露的
+  问题：每个观测只执行一个动作、边端独立步骤回放进 S2 历史、正确处理纯动作
+  STOP / LOOK_DOWN、动作块耗尽后强制刷新、RGB/深度输入转换，以及可复现的 Habitat
+  episode 锁定。公开演示精简为两支代表性 Habitat 对照和一支完整 RoboNix TUI 链路。
+  详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-27 — v0.4.0：**两处安全性与活性修复，均为破坏性变更。`config.mode` 改为必填 —— 它此前默认为 `mock`，意味着一个未配置的部署会静默拿到桩策略：既会把没有真正导航的运行报成 `SUCCEEDED`，还可能驱动真实底盘 —— 而桩后端现在必须以 `allow_stub_actions: true` 显式声明，此时根本不会调用 `chassis/move`。无法启动的 `navigate` 现在让该次调用失败，而不再返回 `accepted=false`；未知的运行返回 `FAILED` 而非 `PENDING`，因此轮询 `navigate` / `status` / `cancel` 这组异步契约的调用方总能到达终态。此外，自然语言导航只需要本 service 这一个入口：pilot 直接发现它的 MCP 契约，上述契约组的轮询由 executor 驱动，因此不需要在旁边再部署任何转发用的包。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-27 — v0.3.0：**改为以 **service** 身份发布 —— `robonix.service.navigation.vln`，即 `robonix.service.navigation`（Nav2）的指令跟随版兄弟。所有契约 ID 都变了，因此这是一个破坏性版本；契约 ID 对照表、以及为什么计算运行时改为首次调用时加载而不是 boot 时加载，见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-25 — v0.2.0：**成为可发布的 RoboNix 包 `robonix.skill.compute_optimization`：五个能力契约、注册到 Atlas 并暴露四个 MCP 工具的 provider（惰性激活）、离散动作到 `chassis/move` 的映射，以及无需硬件的接线夹具。详见 [CHANGELOG.md](CHANGELOG.md)。
@@ -150,33 +152,13 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="demo-filming"></a>
 ## 🎥 Habitat 演示拍摄
 
-演示在 **Habitat / R2R-CE** 中拍摄，不依赖真机。对照片要让观众同时感到两件事：
-**我们能跑通**（弱基线失败/超时），以及 **我们更快**（两边都成功时墙钟更短）。
-HUD 数字必须来自当次运行的遥测；Orin+A100 总表仍是全量汇总，二者分开标注。
+公开仓库只保留三支代表性素材：Naive ECC/Ours 鲁棒性对照、Edge Only/Ours 完成时间
+对照，以及 RoboNix TUI 完整链路。前两支在 **Habitat / R2R-CE** 中运行真实模型策略，
+不等同于物理机器人测试；TUI 视频验证 Service 经 Pilot / Executor 调用的完整路径。
 
-### 对照轴
-
-| 路 | 策略 | 观众应看到 |
-| --- | --- | --- |
-| **A · Naive ECC** | `naive_ecc` — 复用陈旧 latent，无关键同步 | 注入延时后易卡住；常 `FAILED` / 超时 |
-| **B · Ours** | `ours` — 本 service 的在线切换 | 同指令同场景；墙钟更短；`SUCCEEDED` |
-| **C · Edge Only**（可选） | 边端跑完整双系统（无云边拆分） | 能成功，但步延迟与边端内存仍高 |
-
-指令、episode、相机视角必须一致，只改策略（以及给 A 加压时的 RTT）。
-
-### 拍摄清单（给拍摄脚本的简单版）
-
-1. 从 `benchmarks/r2r_ce/demo_episodes.yaml` 选 **8 个 episode**（或用
-   `scripts/demo/run_comparison.sh` 的 scout 模式筛成败对）。
-2. 每个 episode 录 **先 A 后 B**（有时间再录 C），打开 `ANALYSIS_SAVE_VIDEO=1`。
-   决策与运动段保持 1×，只允许片尾空镜 2×。
-3. 固定角标，例如
-   `[A] Naive ECC · step 12 · 498 ms · 41.2 s · FAIL` 与
-   `[B] Ours · step 12 · 224 ms · 18.7 s · SUCCEEDED`。
-4. 至少 4 个两边都成功但 B 明显更快，至少 2 个 **B 成功而 A 失败**。
-5. 用 `python scripts/demo/compose_side_by_side.py …` 合成左右分屏主片。
-
-### 一条命令录制 + 合成
+录制对照时必须锁定相同的 instruction、episode 与相机起点。Naive ECC 对照只改变同步
+策略；Edge Only 对照只改变部署位置。HUD 中的状态与墙钟来自该次运行，不能拿 benchmark
+汇总值伪装成单条 episode 的遥测。
 
 ```bash
 export INTERNNAV_ROOT=/path/to/InternNav
@@ -191,18 +173,17 @@ bash scripts/demo/run_comparison.sh \
   --rtt-delay-ms 200 \
   --output-dir outputs/demo_comparison
 
-# 主片：我们通/对面挂 · 两边成功但我们更快 · 8×2 网格
+# 鲁棒性主片：Naive ECC vs Ours
 python scripts/demo/make_demo_reels.py --mode fail \
   --left  outputs/.../naive_ecc/.../0206.mp4 \
   --right outputs/.../ours/.../0206.mp4 \
   --out docs/assets/demo/habitat_comparison_fail.mp4
+
+# 完成时间主片：Edge Only vs Ours
 python scripts/demo/make_demo_reels.py --mode speed \
-  --left  outputs/.../naive_ecc/.../0206.mp4 \
+  --left  outputs/.../edge_only/.../0206.mp4 \
   --right outputs/.../ours/.../0206.mp4 \
   --out docs/assets/demo/habitat_comparison_speed.mp4
-python scripts/demo/make_demo_reels.py --mode grid \
-  --grid-pairs outputs/demo_grid_clips/pairs.tsv \
-  --out docs/assets/demo/habitat_comparison_grid.gif
 ```
 
 字段、选片标准与剪辑规则见 [benchmarks/r2r_ce/DEMO_FILMING.md](benchmarks/r2r_ce/DEMO_FILMING.md)。
@@ -248,10 +229,9 @@ python scripts/demo/make_demo_reels.py --mode grid \
 provider、Atlas 会完成注册。能力手册见 [CAPABILITY.md](CAPABILITY.md)，配置字段见
 [config.spec](config.spec)。
 
-它是 **`robonix.service.navigation`（Nav2）的指令跟随版兄弟**：两者都拥有一个长时
-运行的导航运行时，暴露同一组 navigate / status / cancel，区别在于 Nav2 的目标是
-度量意义上的 `PoseStamped`，而这里的目标是一句话。给坐标就找 Nav2，给路线描述就
-找这里。
+`navigation.vln` 描述的是本仓库对 RoboNix 暴露的外部能力边界：它接收指令并管理一项
+长时导航任务。我们的贡献集中在该边界之后的云边协同执行，包括 S1/S2 拆分部署、
+自适应同步、模型历史一致性、故障处理和逐步遥测，而不是重新定义 VLN 模型本身。
 
 | 提供的能力约定 | 传输 | 用途 |
 | --- | --- | --- |
@@ -260,6 +240,21 @@ provider、Atlas 会完成注册。能力手册见 [CAPABILITY.md](CAPABILITY.md
 | `robonix/service/navigation/vln/navigate/status` | MCP | 轮询 `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
 | `robonix/service/navigation/vln/navigate/cancel` | MCP | 中止当前任务（幂等） |
 | `robonix/service/navigation/vln/telemetry` | MCP | 单次任务的同步/超时/复用/延迟计数 |
+
+### RoboNix TUI 完整链路
+
+下面的视频保留了 `rbnx chat` 启动、指令输入、Pilot 选择 `navigate` 工具、Executor
+异步轮询以及终态输出的完整过程。上方为 Naive ECC，下方为 Ours；两边都完成同类任务，
+Ours 更早得到终态。它验证的是 **RoboNix 集成链路和实际完成时间**，不替代 R2R-CE
+全量 benchmark。
+
+<div align="center">
+<a href="docs/assets/demo/robonix_tui_demo.mp4">
+  <img width="100%" src="docs/assets/demo/robonix_tui_demo.jpg" alt="RoboNix TUI：上方 Naive ECC，下方 Ours">
+</a>
+<br>
+<sub><a href="docs/assets/demo/robonix_tui_demo.mp4">robonix_tui_demo.mp4</a> — 点击图片播放完整视频</sub>
+</div>
 
 自然语言调用不需要额外部署任何东西：pilot 直接发现 service 上的这些 MCP 约定，
 而 `navigate`、`navigate/status`、`navigate/cancel` 构成一个异步约定组，运行任务的
@@ -1117,7 +1112,7 @@ python3 -m build
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Compute Optimization},
   year    = {2026},
-  version = {0.4.0},
+  version = {0.4.1},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```

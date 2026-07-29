@@ -13,6 +13,7 @@ metrics:
   navigation_error: 0.24611695110797882
   steps: 87
 assets:
-  animation: docs/assets/demo/habitat_demo.gif
-  video: docs/assets/demo/habitat_demo.mp4
   running_images: docs/assets/demo/habitat_running_images.png
+  robustness_comparison: docs/assets/demo/habitat_comparison_fail.mp4
+  completion_time_comparison: docs/assets/demo/habitat_comparison_speed.mp4
+  robonix_tui: docs/assets/demo/robonix_tui_demo.mp4

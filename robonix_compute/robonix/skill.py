@@ -93,13 +93,18 @@ class RoboNixComputeSkill:
             self._transport.reset_episode(instruction=self._instruction)
         return {"status": "reset", "instruction": self._instruction}
 
-    def step(self, observation: Any) -> dict[str, Any]:
+    def step(self, observation: Any, *, force_sync: bool = False) -> dict[str, Any]:
         if self.edge_runtime is None:
             self.setup({})
         if self._closed:
             raise RuntimeError("RoboNixComputeSkill is closed; call setup before step.")
         assert self.edge_runtime is not None
-        action = self.edge_runtime.step(observation, step_id=self._step_id, instruction=self._instruction)
+        action = self.edge_runtime.step(
+            observation,
+            step_id=self._step_id,
+            instruction=self._instruction,
+            force_sync=force_sync,
+        )
         telemetry = asdict(self.edge_runtime.telemetry.steps[-1])
         result = {
             "step_id": self._step_id,
@@ -173,6 +178,11 @@ class RoboNixComputeSkill:
                 "device": str(config.get("device", "cuda:0")),
                 "mode": "dual_system",
                 "state_encoder": None,
+                # InternVLA-N1's trajectory head emits continuous waypoints that
+                # the runner discretises. `ModelCfg` allows extra fields but
+                # supplies no defaults, so leaving this out makes the S1 runner
+                # raise AttributeError on its first action conversion.
+                "continuous_traj": True,
             }
             model_settings.update(dict(config.get("model_settings", {})))
             s1_runner = InternNavS1Adapter(InternVLAN1S1Runner(model_settings=model_settings))

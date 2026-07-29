@@ -88,8 +88,7 @@ $PYTHON_BIN scripts/demo/compose_side_by_side.py \
   --out outputs/demo_comparison/habitat_comparison.mp4
 ```
 
-Public **result** reels (fail / speed / 8×2 grid). Remapping with `setpts` and
-asymmetric RTT is intentional when you only need the story on screen:
+Public result reels keep only two representative Habitat comparisons:
 
 ```bash
 # We succeed · they hang
@@ -100,14 +99,9 @@ python3 scripts/demo/make_demo_reels.py --mode fail \
 
 # Both succeed · we finish first
 python3 scripts/demo/make_demo_reels.py --mode speed \
-  --left  outputs/demo_comparison_v2/naive_ecc/eval/vis_0/Z6MFQCViBuw/0206.mp4 \
+  --left  outputs/demo_comparison_v2/edge_only/eval/vis_0/Z6MFQCViBuw/0206.mp4 \
   --right outputs/demo_comparison_v2/ours/eval/vis_0/Z6MFQCViBuw/0206.mp4 \
   --out docs/assets/demo/habitat_comparison_speed.mp4
-
-# 8×2 grid GIF — TSV lines: left_mp4<TAB>right_mp4<TAB>label
-python3 scripts/demo/make_demo_reels.py --mode grid \
-  --grid-pairs outputs/demo_grid_clips/pairs.tsv \
-  --out docs/assets/demo/habitat_comparison_grid.gif
 ```
 
 HUD fields burned into each half:
@@ -119,19 +113,21 @@ HUD fields burned into each half:
 Editing rules:
 
 - For paper-faithful cuts: keep decision and motion at **1×**; only idle tails may be 2×.
-- For public “result” clips: `make_demo_reels.py` may slow the baseline and speed ours.
+- For public result clips, keep Ours at normal speed. Any added baseline delay
+  must appear only at planning boundaries, not during motion, and the on-screen
+  label must distinguish measured benchmark speedup from a presentation target.
 - Freeze the final frame ~2 s with the badge visible.
-- Optional open card: instruction + “same episode, two strategies”.
+- Do not add a static opening card; begin with the live run.
 
 ## What “good” looks like for the public reel
 
 Ship three assets under `docs/assets/demo/`:
 
 1. `habitat_comparison_fail.mp4` (+ `.gif` preview) — baseline hangs, ours succeeds.
-2. `habitat_comparison_speed.mp4` (+ `.gif`) — both succeed, ours finishes first.
-3. `habitat_comparison_grid.gif` — 8×2 small contact sheet for the curated list.
-
-Keep `habitat_demo.mp4` as the secondary single-lane clip.
+2. `habitat_comparison_speed.mp4` (+ `.gif`) — Edge Only and Ours both succeed,
+   Ours finishes first.
+3. `robonix_tui_demo.mp4` (+ `.jpg` poster) — complete `rbnx chat` startup,
+   instruction, tool call, polling, and terminal state.
 
 ## Workstation notes
 

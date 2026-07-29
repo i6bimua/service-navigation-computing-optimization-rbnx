@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: MulanPSL-2.0
+#
+# LOCAL VERIFICATION DEPLOYMENT, PILOT VARIANT — not a published robot.
+#
+# Same body and same service as robonix_manifest.yaml, plus pilot + liaison so
+# `rbnx chat` can turn a natural-language instruction into a navigate call. This
+# is the variant the manifest's own "To also exercise `rbnx chat`" note
+# describes; it exists as a separate file so the credential-free harness stays
+# credential-free.
+#
+# What this does NOT do: measure navigation. mock_robot's frames carry no
+# semantic content, and `mode: mock` runs the stub edge policy. This shows the
+# control path — language -> tool call -> async status polling -> terminal state.
+# Benchmark numbers come from the InternNav Habitat harness.
+#
+# Bring-up (from this directory):
+#   robonix-compute-cloud --mode mock --port 8765 &
+#   export ROS_PYTHON="$HOME/miniconda3/envs/rbnx-ros/bin/python"
+#   export VLM_BASE_URL VLM_API_KEY VLM_MODEL  # set all three in your shell first
+#   rbnx build -f robonix_manifest.tui.yaml
+#   rbnx boot  -f robonix_manifest.tui.yaml
+#   rbnx caps -v      # mock_robot and navigation_vln both ACTIVE
+#   rbnx tools        # the four robonix/service/navigation/vln/* tools
+#   rbnx chat         # "walk down the hallway and stop at the kitchen door"
+#   rbnx shutdown -f robonix_manifest.tui.yaml
+#
+# INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
+# navigation_vln.step_size_m / turn_angle_deg.
+manifestVersion: 1
+name: robonix-navigation-vln-local-verification-pilot
+
+catalog:
+  name: robonix.robot.testing.navigation_vln_harness_pilot
+  version: "0.1.0"
+  description: Local verification deployment with pilot enabled, for demonstrating rbnx chat against a synthetic body; not a published robot.
+  license: "MulanPSL-2.0"
+  tags: [robot, deploy, testing, fixture, cloud-edge]
+  maintainers:
+    - "Seto <202330552461@mail.scut.edu.cn>"
+
+env:
+  RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+  ROS_DOMAIN_ID: "0"
+  ROS_PYTHON: ${ROS_PYTHON}
+
+system:
+  atlas:
+    listen: 127.0.0.1:50051
+    log: info
+  executor:
+    listen: 127.0.0.1:50061
+    log: info
+  # Pilot refuses to start without VLM credentials, so the three VLM_* variables
+  # must be exported before `rbnx boot`. It appends /chat/completions to
+  # upstream, so upstream is the OpenAI-compatible base URL.
+  pilot:
+    listen: 127.0.0.1:50071
+    log: info
+    vlm:
+      upstream: ${VLM_BASE_URL}
+      api_key: ${VLM_API_KEY}
+      model: ${VLM_MODEL}
+      api_format: openai
+  liaison:
+    listen: 127.0.0.1:50081
+    log: info
+  soma:
+    listen: 127.0.0.1:50091
+    robot_yaml: soma.yaml
+
+primitive:
+  - name: mock_robot
+    path: ../mock_robot
+    config:
+      step_size_m: 0.25
+      turn_angle_deg: 15.0
+      sensor_hz: 10.0
+      image_width: 224
+      image_height: 224
+      hfov_deg: 79.0
+
+service:
+  - name: navigation_vln
+    path: ../../..
+    config:
+      mode: mock
+      allow_stub_actions: true
+      cloud_host: 127.0.0.1
+      cloud_port: 8765
+      step_size_m: 0.25
+      turn_angle_deg: 15.0
+      camera_provider_id: mock_robot
+      chassis_provider_id: mock_robot
+      use_map_pose: false
+      max_steps: 200
+      timeout_s: 300.0
+      action_steps_to_execute: 0
