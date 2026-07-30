@@ -2,6 +2,7 @@
      它会把块级 HTML 元素整体原样透出，若在这两个标签之间写 Markdown，
      目录页上就会直接显示成源码。 -->
 <div align="center">
+<p><strong>本 RoboNix Service 由北京大学计算机学院陈翔教授课题组（<a href="https://if-lab-pku.github.io/">IFLab</a>）提供与维护。</strong></p>
 <h1>RoboNix Compute Optimization</h1>
 <p><strong>面向 RoboNix 双系统视觉语言导航的开源计算优化工具</strong></p>
 <p>
@@ -223,8 +224,6 @@ python scripts/demo/make_demo_reels.py --mode speed \
 
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix 集成边界
-
-> **本 RoboNix Service 由北京大学计算机学院陈翔教授课题组（[IFLab](https://if-lab-pku.github.io/)）提供与维护。**
 
 本仓库是一个 RoboNix **Service 软件包** —— `robonix.service.navigation.vln`。
 仓库根目录的 `package_manifest.yaml` 声明了五个能力约定，因此 `rbnx boot` 会拉起
