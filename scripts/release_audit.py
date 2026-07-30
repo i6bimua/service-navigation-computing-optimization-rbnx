@@ -10,7 +10,10 @@ from pathlib import Path
 DEFAULT_DENY_PATTERNS = [
     re.compile(r"/home/"),
     re.compile(r"/data/[^\s`]+"),
-    re.compile(r"iflab", re.IGNORECASE),
+    # Workstation account names such as `iflab-zzh-intern`, which leak through
+    # copied paths and command transcripts. The bare lab name is published on
+    # purpose in the README credit, so only the account form is denied.
+    re.compile(r"iflab[-_]", re.IGNORECASE),
     re.compile(r"HF_TOKEN\s*="),
     re.compile(r"API_KEY\s*="),
     re.compile(r"OPENAI_API_KEY\s*="),
