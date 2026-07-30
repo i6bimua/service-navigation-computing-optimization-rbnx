@@ -224,6 +224,8 @@ python scripts/demo/make_demo_reels.py --mode speed \
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix 集成边界
 
+> **本 RoboNix Service 由北京大学计算机学院陈翔教授课题组（[IFLab](https://if-lab-pku.github.io/)）提供与维护。**
+
 本仓库是一个 RoboNix **Service 软件包** —— `robonix.service.navigation.vln`。
 仓库根目录的 `package_manifest.yaml` 声明了五个能力约定，因此 `rbnx boot` 会拉起
 provider、Atlas 会完成注册。能力手册见 [CAPABILITY.md](CAPABILITY.md)，配置字段见

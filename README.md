@@ -274,6 +274,8 @@ memory, and optional diffusion latents remain behind adapters.
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix Integration Boundary
 
+> **This RoboNix Service is provided and maintained by Prof. Xiang Chen's group ([IFLab](https://if-lab-pku.github.io/)), School of Computer Science, Peking University.**
+
 This repository is a RoboNix **Service package** — `robonix.service.navigation.vln`.
 `package_manifest.yaml` at the repository root declares five capability
 contracts, so `rbnx boot` starts the provider and Atlas registers it. See
