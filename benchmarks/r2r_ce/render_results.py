@@ -62,7 +62,7 @@ def render() -> str:
     rows = read_rows()
     edge = row(rows, "Orin+A100", "Edge Only")
     naive = row(rows, "Orin+A100", "Naive ECC")
-    ours = row(rows, "Orin+A100", "Compute Skill")
+    ours = row(rows, "Orin+A100", "Navigation Computing")
 
     edge_latency = float(edge["avg_step_latency_ms"])
     ours_latency = float(ours["avg_step_latency_ms"])
@@ -78,7 +78,7 @@ def render() -> str:
     parts = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" '
         'viewBox="0 0 1400 700" role="img" '
-        'aria-label="RoboNix Compute Optimization Skill R2R-CE benchmark overview">',
+        'aria-label="RoboNix Navigation Computing Optimization R2R-CE benchmark overview">',
         "<defs>",
         "<style>",
         "text { font-family: Inter, Arial, sans-serif; }",
@@ -116,11 +116,11 @@ def render() -> str:
         ]
     )
     parts.extend(comparison_bar(60, 430, 430, "Naive ECC SR", naive_sr, 70, "#94a3b8", "%"))
-    parts.extend(comparison_bar(60, 486, 430, "Compute Skill SR", ours_sr, 70, "#16a34a", "%"))
+    parts.extend(comparison_bar(60, 486, 430, "Navigation Computing SR", ours_sr, 70, "#16a34a", "%"))
     parts.extend(comparison_bar(60, 560, 430, "Naive ECC SPL", naive_spl, 65, "#94a3b8", ""))
-    parts.extend(comparison_bar(60, 616, 430, "Compute Skill SPL", ours_spl, 65, "#f59e0b", ""))
+    parts.extend(comparison_bar(60, 616, 430, "Navigation Computing SPL", ours_spl, 65, "#f59e0b", ""))
     parts.extend(comparison_bar(735, 430, 430, "Edge Only", edge_latency, 520, "#94a3b8", " ms"))
-    parts.extend(comparison_bar(735, 486, 430, "Compute Skill", ours_latency, 520, "#2563eb", " ms"))
+    parts.extend(comparison_bar(735, 486, 430, "Navigation Computing", ours_latency, 520, "#2563eb", " ms"))
     parts.extend(
         [
             text(

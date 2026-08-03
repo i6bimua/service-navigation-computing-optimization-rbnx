@@ -1,4 +1,4 @@
-"""RoboNix Compute Optimization Skill runtime."""
+"""RoboNix Navigation Computing Optimization runtime."""
 
 __all__ = ["__version__"]
 

@@ -15,7 +15,7 @@ DEFAULT_DEPTH_URL = (
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Download external RoboNix Compute Optimization model checkpoints.")
+    parser = argparse.ArgumentParser(description="Download external RoboNix Navigation Computing Optimization model checkpoints.")
     parser.add_argument("--internvla-repo", default=DEFAULT_INTERNVLA_REPO)
     parser.add_argument("--depth-url", default=DEFAULT_DEPTH_URL)
     parser.add_argument(

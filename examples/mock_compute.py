@@ -26,7 +26,7 @@ def build_observation(step: int) -> dict[str, np.ndarray]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run a RoboNix Compute Optimization Skill mock rollout.")
+    parser = argparse.ArgumentParser(description="Run a RoboNix Navigation Computing Optimization mock rollout.")
     parser.add_argument("--steps", type=int, default=5)
     parser.add_argument("--delay-s", type=float, default=0.0)
     parser.add_argument("--output", type=Path, default=Path("outputs/mock_compute/telemetry.json"))

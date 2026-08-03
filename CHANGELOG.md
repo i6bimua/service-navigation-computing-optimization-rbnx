@@ -2,6 +2,16 @@
 
 All notable public changes are recorded here.
 
+## 0.4.2 — 2026-08-03
+
+### Changed
+
+- public branding and method labels now say **Navigation Computing Optimization**
+  / **Navigation Computing** instead of Compute Optimization / Compute Skill.
+  Catalog tags and package keywords follow as `navigation-computing-optimization`.
+  Historical package ids, the pip distribution name, the `robonix_compute` import
+  tree, and `robonix-compute-*` CLI entry points are unchanged.
+
 ## 0.4.1 — 2026-07-29
 
 Fixes correctness defects exposed by running the trained InternVLA-N1 S1/S2
@@ -201,7 +211,7 @@ drop-in for a 0.2.0 deployment manifest.
 - documentation no longer calls this package a skill: the README title, the
   `CITATION.cff` / BibTeX title and the `robonix_compute` docstrings drop the
   `-Skill` suffix from the project name, and "What the Skill Optimizes" is now
-  "What the Runtime Optimizes". The benchmark method label `Compute Skill` is
+  "What the Runtime Optimizes". The benchmark method label `Navigation Computing` is
   deliberately unchanged — it is published data, appearing in
   `benchmarks/r2r_ce/results/*.csv`, `metadata.yaml`, `render_results.py` and the
   generated figures, and renaming it would desynchronize the tables from the

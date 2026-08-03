@@ -13,7 +13,7 @@ from robonix_compute.robonix.skill import RoboNixComputeSkill
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run or inspect a RoboNix Compute Optimization Habitat smoke job.")
+    parser = argparse.ArgumentParser(description="Run or inspect a RoboNix Navigation Computing Optimization Habitat smoke job.")
     parser.add_argument("--internnav-root", type=Path, default=env_path("INTERNNAV_ROOT", "../internnav-thor-codeonly/workspace/InternNav"))
     parser.add_argument("--config", default="scripts/eval/configs/habitat_dual_system_edge_cloud_cfg.py")
     parser.add_argument("--real-edge-cloud", action="store_true", help="Run real Habitat cloud-S2 plus edge-S1 split inference.")

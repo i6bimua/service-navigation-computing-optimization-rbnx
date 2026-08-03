@@ -1,4 +1,4 @@
-"""Atlas-routed RGB-D + pose input for the compute-optimization skill.
+"""Atlas-routed RGB-D + pose input for the navigation computing optimization service.
 
 Turns the three camera contracts and the chassis odometry contract into the
 observation mapping the compute runtime already consumes

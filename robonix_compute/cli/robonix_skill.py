@@ -9,7 +9,7 @@ from robonix_compute.robonix.skill import RoboNixComputeSkill
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Start the RoboNix Compute Optimization Skill service.")
+    parser = argparse.ArgumentParser(description="Start the RoboNix Navigation Computing Optimization service.")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8090)
     parser.add_argument("--config-json")

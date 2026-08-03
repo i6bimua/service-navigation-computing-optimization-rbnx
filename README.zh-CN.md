@@ -3,8 +3,8 @@
      目录页上就会直接显示成源码。 -->
 <div align="center">
 <p><strong>本 RoboNix Service 由北京大学计算机学院陈翔教授课题组（<a href="https://if-lab-pku.github.io/">IFLab</a>）提供与维护。</strong></p>
-<h1>RoboNix Compute Optimization</h1>
-<p><strong>面向 RoboNix 双系统视觉语言导航的开源计算优化工具</strong></p>
+<h1>RoboNix Navigation Computing Optimization</h1>
+<p><strong>面向 RoboNix 双系统视觉语言导航的开源导航计算优化工具</strong></p>
 <p>
   <a href="README.md">English</a> ·
   <a href="#what-this-adds">为 RoboNix 带来了什么</a> ·
@@ -40,7 +40,7 @@ RoboNix 生命周期和机器人 I/O。
 运行时正确性、调度与 RoboNix 集成。
 
 目录中登记为 `robonix.service.navigation.vln`，因为它对 RoboNix 暴露的是一个长期运行
-的导航 Service；云边计算优化是该 Service 的核心实现。云端 S2 属于同一运行时，运行在
+的导航 Service；导航计算优化是该 Service 的核心实现。云端 S2 属于同一运行时，运行在
 机器人部署外的 GPU 主机上。HTTP 生命周期 API 仍为非 RoboNix 编排器保留。详见
 [RoboNix 集成边界](#robonix-integration-boundary)。
 
@@ -89,7 +89,7 @@ RoboNix TUI 的完整启动、指令输入、工具调用与终态演示放在
   <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark 结果总览">
 </div>
 
-Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标。在 Orin+A100 上，SR 与 Edge Only 基本持平（`62.8` 对 `62.9`），平均单步时延降低 2.22×。Step Sync 的 SR 更高，但每步阻塞 `1644.5 ms`。Orin 与 Thor 完整表格见 [Benchmark 结果](#benchmark-results)。
+Navigation Computing 优化的是时延与精度的综合权衡，而不是单一指标。在 Orin+A100 上，SR 与 Edge Only 基本持平（`62.8` 对 `62.9`），平均单步时延降低 2.22×。Step Sync 的 SR 更高，但每步阻塞 `1644.5 ms`。Orin 与 Thor 完整表格见 [Benchmark 结果](#benchmark-results)。
 
 ### 按目标选择入口
 
@@ -110,7 +110,7 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 - [项目动态](#news)
 - [系统效果](#results)
 - [Habitat 演示拍摄](#demo-filming)
-- [核心计算优化](#what-the-runtime-optimizes)
+- [核心导航计算优化](#what-the-runtime-optimizes)
 - [系统架构](#architecture)
 - [运行图片](#running-images)
 - [RoboNix 集成边界](#robonix-integration-boundary)
@@ -140,6 +140,9 @@ Compute Skill 优化的是时延与精度的综合权衡，而不是单一指标
 <a id="news"></a>
 ## 📰 项目动态
 
+- **2026-08-03 — v0.4.2：**对外品牌统一为 **Navigation Computing Optimization**
+  （导航计算优化）；benchmark 方法名改为 **Navigation Computing**。详见
+  [CHANGELOG.md](CHANGELOG.md)。
 - **2026-07-29 — v0.4.1：**修正训练后 InternVLA-N1 接入完整 Service 闭环时暴露的
   问题：每个观测只执行一个动作、边端独立步骤回放进 S2 历史、正确处理纯动作
   STOP / LOOK_DOWN、动作块耗尽后强制刷新、RGB/深度输入转换，以及可复现的 Habitat
@@ -190,7 +193,7 @@ python scripts/demo/make_demo_reels.py --mode speed \
 字段、选片标准与剪辑规则见 [benchmarks/r2r_ce/DEMO_FILMING.md](benchmarks/r2r_ce/DEMO_FILMING.md)。
 
 <a id="what-the-runtime-optimizes"></a>
-## 🧩 核心计算优化
+## 🧩 核心导航计算优化
 
 | 机制 | 运行时作用 |
 | --- | --- |
@@ -200,13 +203,13 @@ python scripts/demo/make_demo_reels.py --mode speed \
 | **自适应缺失处理** | 超时预测与 latent 复用限制网络阻塞，同时保留迟到响应。 |
 | **完整遥测** | 逐步记录 S1/S2 时延、同步、超时、复用、载荷大小与导航指标。 |
 
-朴素异步执行速度快，但可能持续消费过时语义上下文；全步同步保持上下文新鲜，却会阻塞控制闭环。Compute Skill 根据运行时状态在两种行为之间切换。
+朴素异步执行速度快，但可能持续消费过时语义上下文；全步同步保持上下文新鲜，却会阻塞控制闭环。Navigation Computing 根据运行时状态在两种行为之间切换。
 
 <a id="architecture"></a>
 ## 🧠 系统架构
 
 <div align="center">
-  <img width="100%" src="docs/assets/compute_optimization_architecture.png" alt="计算优化运行时架构">
+  <img width="100%" src="docs/assets/compute_optimization_architecture.png" alt="导航计算优化运行时架构">
 </div>
 
 1. **端侧快速闭环：**S1 融合最新观测和 active context 生成动作，不等待云端推理。
@@ -367,7 +370,7 @@ conda create -n rbnx-ros -c robostack-staging -c conda-forge python=3.11 \
 | 真实模型严格预检 | ✅ 已执行 | InternNav、Habitat、4 个模型分片、S1、深度权重、数据、端口和双 GPU ID |
 | R2R 单 episode 双 GPU 运行 | ✅ 连通性 smoke | 完成导航并产出 result、progress、runtime 与 telemetry；不作为 benchmark 证据 |
 | R2R-CE 1,839 episode 表格 | ✅ 项目 benchmark 摘要 | 版本化保存紧凑 CSV 与 metadata；不打包完整原始日志 |
-| R2R 难度子集 / RxR / REVERIE proxy 结果 | 仅数据准备 | 不宣称 Compute Skill 已有这些数据集的 full-split 结果 |
+| R2R 难度子集 / RxR / REVERIE proxy 结果 | 仅数据准备 | 不宣称 Navigation Computing 已有这些数据集的 full-split 结果 |
 | 原版 REVERIE | 不支持 | 使用不同的 MatterSim/object-grounding 技术栈，不作为 REVERIE-CE 支持项 |
 
 托管 CI 覆盖 Python 3.9–3.11 测试矩阵、CPU Quick Start、全部 CLI、文档链接、SVG XML、结果图确定性生成、包构建和发布审计。GPU/Habitat 检查使用显式的本地或自托管流程。
@@ -659,7 +662,7 @@ robonix-compute-data-check \
 | RxR-CE English compatibility split | 3,669 | 数据与 nDTW ground truth 已验证 |
 | REVERIE navigation-only proxy | 3,433 | 导航代理数据已验证 |
 
-扩展数据检查通过，不代表 Compute Skill 已具备这些可选数据集的完整结果。
+扩展数据检查通过，不代表 Navigation Computing 已具备这些可选数据集的完整结果。
 
 <a id="step-4-strict-preflight"></a>
 ## 🔍 步骤 4：严格预检
@@ -799,7 +802,7 @@ curl -X POST http://127.0.0.1:8090/step \
 | 报告的端侧设备 | NVIDIA AGX Jetson Orin、Thor，`MAX_N` |
 | 导航指标 | NE、SR、SPL |
 | 系统指标 | 平均单步时延、端侧峰值内存、云端峰值内存 |
-| 对比策略 | Edge Only、Cloud Only、Naive ECC、Step Sync、Compute Skill |
+| 对比策略 | Edge Only、Cloud Only、Naive ECC、Step Sync、Navigation Computing |
 
 ### 1. 本地单 episode 连通性运行
 
@@ -888,7 +891,7 @@ python3 benchmarks/r2r_ce/render_results.py
 | Cloud Only | 4.05 | 64.3 | 58.5 | 128.4 ms | — | 16.62 GB |
 | Naive ECC | 4.76 | 56.7 | 45.1 | 202.0 ms | 0.60 GB | 16.03 GB |
 | Step Sync | 4.13 | 65.2 | 58.1 | 1644.5 ms | 0.60 GB | 16.03 GB |
-| **Compute Skill** | **4.18** | **62.8** | **57.8** | **224.4 ms** | **0.60 GB** | **16.03 GB** |
+| **Navigation Computing** | **4.18** | **62.8** | **57.8** | **224.4 ms** | **0.60 GB** | **16.03 GB** |
 
 ### Thor + A100
 
@@ -898,7 +901,7 @@ python3 benchmarks/r2r_ce/render_results.py
 | Cloud Only | 4.05 | 64.3 | 58.5 | 128.4 ms | — | 16.62 GB |
 | Naive ECC | 4.72 | 56.7 | 45.4 | 164.6 ms | 0.60 GB | 16.03 GB |
 | Step Sync | 4.15 | 64.1 | 57.2 | 1328.0 ms | 0.60 GB | 16.03 GB |
-| **Compute Skill** | **4.14** | **63.1** | **58.1** | **166.3 ms** | **0.60 GB** | **16.03 GB** |
+| **Navigation Computing** | **4.14** | **63.1** | **58.1** | **166.3 ms** | **0.60 GB** | **16.03 GB** |
 
 ### Orin+A100 消融
 
@@ -916,7 +919,7 @@ python3 benchmarks/r2r_ce/render_results.py
 | 控制状态与 counters | 端侧内存 `< 1 KB` |
 | 切换与编排逻辑 | 相比模型推理可忽略 |
 
-Cloud Only 是计算上界，不代表端侧本地闭环。Step Sync 是上下文新鲜度上界，但阻塞开销较大。Compute Skill 关注精度—时延权衡。
+Cloud Only 是计算上界，不代表端侧本地闭环。Step Sync 是上下文新鲜度上界，但阻塞开销较大。Navigation Computing 关注精度—时延权衡。
 
 ### 报告边界
 
@@ -933,7 +936,7 @@ Cloud Only 是计算上界，不代表端侧本地闭环。Step Sync 是上下�
 
 可选扩展 profile 可用于后续泛化分析，但其就绪范围被严格限制：
 
-| 数据集 | 数据验证 | 公开 Compute Skill 结果 |
+| 数据集 | 数据验证 | 公开 Navigation Computing 结果 |
 | --- | --- | --- |
 | R2R-CE short / medium / long | Episode 数、范围与场景资产已检查 | 不宣称 |
 | RxR-CE English compatibility split | 3,669 episodes 与 nDTW ground truth 已检查 | 不宣称 |
@@ -1111,9 +1114,9 @@ python3 -m build
 ```bibtex
 @software{robonix_compute_optimization_2026,
   author  = {Cao, Hangyu and Zheng, Zihao},
-  title   = {RoboNix Compute Optimization},
+  title   = {RoboNix Navigation Computing Optimization},
   year    = {2026},
-  version = {0.4.1},
+  version = {0.4.2},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```

@@ -87,7 +87,7 @@ class SignalLock:
 
 
 class EdgeRuntime:
-    """Online RoboNix Compute Optimization edge runtime.
+    """Online RoboNix Navigation Computing Optimization edge runtime.
 
     The edge owns synchronization decisions. Cloud calls are represented by a
     Future-returning sender so the same runtime can run over websockets, RPC, or

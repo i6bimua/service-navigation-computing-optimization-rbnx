@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" role="img" aria-label="RoboNix Compute Optimization Skill R2R-CE benchmark overview">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" role="img" aria-label="RoboNix Navigation Computing Optimization R2R-CE benchmark overview">
 <defs>
 <style>
 text { font-family: Inter, Arial, sans-serif; }
@@ -44,7 +44,7 @@ text { font-family: Inter, Arial, sans-serif; }
 <rect x="60" y="430" width="430" height="20" rx="10" class="bar-bg"/>
 <rect x="60" y="430" width="348.3" height="20" rx="10" fill="#94a3b8"/>
 <text x="508" y="446" class="bar-value" text-anchor="start">56.7%</text>
-<text x="60" y="478" class="bar-label" text-anchor="start">Compute Skill SR</text>
+<text x="60" y="478" class="bar-label" text-anchor="start">Navigation Computing SR</text>
 <rect x="60" y="486" width="430" height="20" rx="10" class="bar-bg"/>
 <rect x="60" y="486" width="385.8" height="20" rx="10" fill="#16a34a"/>
 <text x="508" y="502" class="bar-value" text-anchor="start">62.8%</text>
@@ -52,7 +52,7 @@ text { font-family: Inter, Arial, sans-serif; }
 <rect x="60" y="560" width="430" height="20" rx="10" class="bar-bg"/>
 <rect x="60" y="560" width="298.4" height="20" rx="10" fill="#94a3b8"/>
 <text x="508" y="576" class="bar-value" text-anchor="start">45.1</text>
-<text x="60" y="608" class="bar-label" text-anchor="start">Compute Skill SPL</text>
+<text x="60" y="608" class="bar-label" text-anchor="start">Navigation Computing SPL</text>
 <rect x="60" y="616" width="430" height="20" rx="10" class="bar-bg"/>
 <rect x="60" y="616" width="382.4" height="20" rx="10" fill="#f59e0b"/>
 <text x="508" y="632" class="bar-value" text-anchor="start">57.8</text>
@@ -60,7 +60,7 @@ text { font-family: Inter, Arial, sans-serif; }
 <rect x="735" y="430" width="430" height="20" rx="10" class="bar-bg"/>
 <rect x="735" y="430" width="411.6" height="20" rx="10" fill="#94a3b8"/>
 <text x="1183" y="446" class="bar-value" text-anchor="start">497.8 ms</text>
-<text x="735" y="478" class="bar-label" text-anchor="start">Compute Skill</text>
+<text x="735" y="478" class="bar-label" text-anchor="start">Navigation Computing</text>
 <rect x="735" y="486" width="430" height="20" rx="10" class="bar-bg"/>
 <rect x="735" y="486" width="185.6" height="20" rx="10" fill="#2563eb"/>
 <text x="1183" y="502" class="bar-value" text-anchor="start">224.4 ms</text>

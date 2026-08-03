@@ -92,7 +92,7 @@ robot travels at most one increment past the cancel.
 
 ### `robonix/service/navigation/vln/telemetry`
 
-Read the compute-optimization measurements for a run. Empty `run_id` means the
+Read the navigation computing optimization measurements for a run. Empty `run_id` means the
 most recent run.
 
 Returns `{known, steps, sync_count, timeout_count, late_absorbed_count,
@@ -270,5 +270,5 @@ Call `navigate` once with the instruction and stop there. `navigate`,
 executor takes the returned `run_id`, polls the run to a terminal state and
 reports it; the caller does not have to sequence start → poll → cancel itself.
 
-`telemetry` is for reading the compute-optimization counters after a run, not
+`telemetry` is for reading the navigation computing optimization counters after a run, not
 for driving one.

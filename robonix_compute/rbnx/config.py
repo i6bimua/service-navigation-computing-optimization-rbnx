@@ -1,4 +1,4 @@
-"""Config parsing for the compute-optimization skill's Driver(CMD_INIT) payload.
+"""Config parsing for the navigation computing optimization service's Driver(CMD_INIT) payload.
 
 Kept free of `robonix_api` so validation is testable without a Robonix
 deployment installed. Field documentation lives in `config.spec`; the defaults

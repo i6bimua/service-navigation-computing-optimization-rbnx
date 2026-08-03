@@ -11,7 +11,7 @@ full-split logs.
 - Backbone: InternVLA-N1 DualVLN with original weights
 - Cloud: NVIDIA A100
 - Edge: NVIDIA AGX Jetson Orin or Thor in `MAX_N`
-- Strategies: Edge Only, Cloud Only, Naive ECC, Step Sync, and Compute Skill
+- Strategies: Edge Only, Cloud Only, Naive ECC, Step Sync, and Navigation Computing
 
 The CSV files are the structured source for the project benchmark summary. See
 `metadata.yaml` for the complete evaluation conditions.

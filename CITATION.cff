@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: If you use this software, please cite the repository and the upstream InternNav/InternVLA work.
-title: RoboNix Compute Optimization
+title: RoboNix Navigation Computing Optimization
 type: software
-version: 0.4.1
-date-released: 2026-07-29
+version: 0.4.2
+date-released: 2026-08-03
 authors:
   - family-names: Cao
     given-names: Hangyu
@@ -17,5 +17,5 @@ keywords:
   - RoboNix
   - embodied AI
   - vision-language navigation
-  - compute optimization
+  - navigation computing optimization
   - edge inference

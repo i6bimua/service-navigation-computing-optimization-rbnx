@@ -200,7 +200,7 @@ def print_table(summary: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Summarize a real Habitat compute optimization evaluation run.")
+    parser = argparse.ArgumentParser(description="Summarize a real Habitat navigation computing optimization evaluation run.")
     parser.add_argument("run_root", type=Path, help="Run output directory containing eval/result.json.")
     parser.add_argument("--format", choices=("table", "json"), default="table")
     args = parser.parse_args()

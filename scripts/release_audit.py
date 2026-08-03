@@ -131,7 +131,7 @@ def iter_files(root: Path):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Audit RoboNix Compute Optimization release tree for common publishing hazards.")
+    parser = argparse.ArgumentParser(description="Audit RoboNix Navigation Computing Optimization release tree for common publishing hazards.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--max-file-mb", type=float, default=20.0)
     args = parser.parse_args()

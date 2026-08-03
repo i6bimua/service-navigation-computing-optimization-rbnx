@@ -10,7 +10,7 @@ from robonix_compute.preflight import format_preflight_table, run_preflight
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Check compute optimization evaluation prerequisites.")
+    parser = argparse.ArgumentParser(description="Check navigation computing optimization evaluation prerequisites.")
     parser.add_argument("--mode", choices=["habitat_eval"], default="habitat_eval")
     parser.add_argument("--internnav-root", type=Path, default=env_path("INTERNNAV_ROOT", "../internnav-thor-codeonly/workspace/InternNav"))
     parser.add_argument("--analysis-config", default="scripts/eval/configs/analysis_cfg.py")

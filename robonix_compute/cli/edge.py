@@ -19,7 +19,7 @@ from robonix_compute.model_adapters import InternNavS1Adapter
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the RoboNix Compute Optimization edge-side online runtime.")
+    parser = argparse.ArgumentParser(description="Run the RoboNix Navigation Computing Optimization edge-side online runtime.")
     parser.add_argument("--mode", choices=["mock", "internnav"], default="mock")
     parser.add_argument("--cloud-host", default="127.0.0.1")
     parser.add_argument("--cloud-port", type=int, default=env_int("ROBONIX_COMPUTE_CLOUD_PORT", 8765))

@@ -1,5 +1,5 @@
 name: Feature or model request
-description: Propose a compute optimization, model adapter, or documentation improvement
+description: Propose a navigation computing optimization, model adapter, or documentation improvement
 title: "[Feature] "
 labels: ["enhancement"]
 body:

@@ -28,7 +28,7 @@ robot:
 
 description:
   summary: >
-    A synthetic body used to verify the compute-optimization skill's wiring. It
+    A synthetic body used to verify the navigation computing optimization service's wiring. It
     publishes RGB-D and odometry and moves in fixed discrete increments: 0.25 m
     forward or 15 degrees of in-place rotation. The frames carry no semantic
     content, so nothing observed here reflects real navigation.

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MulanPSL-2.0
 #
 # robonix.service.navigation.vln — instruction-following navigation, built on a
-# compute-optimized dual-system runtime.
+# navigation-computing-optimized dual-system runtime.
 #
 # kind: service. This owns a long-running navigation runtime: it consumes camera
 # and pose inputs and generates chassis actions itself, rather than sequencing
@@ -40,10 +40,10 @@ manifestVersion: 1
 
 package:
   name: "robonix.service.navigation.vln"
-  version: "0.4.1"
+  version: "0.4.2"
   description: Instruction-following navigation service — cloud S2 semantic latents plus edge S1 action generation with adaptive cloud-edge synchronization.
   license: "MulanPSL-2.0"
-  tags: [service, navigation, vln, compute-optimization, cloud-edge, dual-system, embodied-ai]
+  tags: [service, navigation, vln, navigation-computing-optimization, cloud-edge, dual-system, embodied-ai]
   maintainers:
     - "Seto <202330552461@mail.scut.edu.cn>"
 

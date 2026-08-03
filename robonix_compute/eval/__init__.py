@@ -1,1 +1,1 @@
-"""Evaluation adapters for RoboNix Compute Optimization."""
+"""Evaluation adapters for RoboNix Navigation Computing Optimization."""

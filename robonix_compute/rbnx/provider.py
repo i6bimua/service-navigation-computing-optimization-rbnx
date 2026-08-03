@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MulanPSL-2.0
 """robonix.service.navigation.vln — Atlas bridge.
 
-Registers the compute-optimized dual-system VLN runtime as a Robonix Service
+Registers the navigation-computing-optimized dual-system VLN runtime as a Robonix Service
 and exposes four MCP tools (navigate / status / cancel / telemetry).
 
 This is the instruction-following sibling of `robonix.service.navigation`
@@ -396,7 +396,7 @@ def navigate_cancel(req: CancelNavigate_Request) -> CancelNavigate_Response:
 
 @service.mcp("robonix/service/navigation/vln/telemetry")
 def navigate_telemetry(req: GetTelemetry_Request) -> GetTelemetry_Response:
-    """Read cloud-edge compute optimization measurements for a navigation run:
+    """Read cloud-edge navigation computing optimization measurements for a navigation run:
     how many steps requested a fresh cloud latent, how many cloud responses
     missed their deadline, how many steps reused a latent, and the mean
     per-step edge latency. Empty run_id means the most recent run."""

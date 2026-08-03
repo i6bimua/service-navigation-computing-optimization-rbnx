@@ -1,5 +1,5 @@
-# robonix/service/navigation/vln/telemetry — read the compute-optimization
-# measurements for a navigation run.
+# robonix/service/navigation/vln/telemetry — read the navigation computing
+# optimization measurements for a navigation run.
 #
 # This is what distinguishes this service from a plain VLN policy: every step
 # records whether it triggered a cloud synchronization, whether the cloud
@@ -18,7 +18,7 @@ id      = "robonix/service/navigation/vln/telemetry"
 version = "1"
 kind    = "service"
 idl     = "navigation_vln/srv/GetTelemetry.srv"
-description = "Read cloud-edge compute optimization telemetry for a navigation run."
+description = "Read cloud-edge navigation computing optimization telemetry for a navigation run."
 
 [mode]
 type = "rpc"

@@ -23,7 +23,7 @@ comparison_methods:
   - Cloud Only
   - Naive ECC
   - Step Sync
-  - Compute Skill
+  - Navigation Computing
 provenance:
   status: project-benchmark
   raw_full_split_logs_in_repository: false

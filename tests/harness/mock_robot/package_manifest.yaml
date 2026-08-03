@@ -7,7 +7,7 @@
 # syswonder/robonix-package-catalog. The catalog only reads the manifest at a
 # repository root, so a nested one like this is invisible to it.
 #
-# What it is for: exercising the compute-optimization skill end to end — contract
+# What it is for: exercising the navigation computing optimization service end to end — contract
 # resolution, image decode, chassis/move dispatch, lifecycle — on a machine with
 # no simulator and no checkpoints. The frames it publishes carry no semantic
 # content, so nothing measured against it says anything about navigation
@@ -28,7 +28,7 @@ manifestVersion: 1
 package:
   name: "robonix.primitive.testing.mock_robot"
   version: "0.1.0"
-  description: Synthetic robot body used to verify the compute-optimization skill's wiring; not a published package.
+  description: Synthetic robot body used to verify the navigation computing optimization service's wiring; not a published package.
   license: "MulanPSL-2.0"
   tags: [primitive, testing, fixture, camera, chassis]
   maintainers:

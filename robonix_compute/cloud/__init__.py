@@ -1,4 +1,4 @@
-"""Cloud-side RoboNix Compute Optimization runtime."""
+"""Cloud-side RoboNix Navigation Computing Optimization runtime."""
 
 from robonix_compute.cloud.runtime import CloudRuntime
 

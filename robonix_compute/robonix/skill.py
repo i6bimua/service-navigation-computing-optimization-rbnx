@@ -31,7 +31,7 @@ def _mock_s1(_observation: Any, latent: Any) -> int:
 
 
 class RoboNixComputeSkill:
-    """RoboNix-facing compute optimization skill wrapper.
+    """RoboNix-facing navigation computing optimization skill wrapper.
 
     The wrapper owns the edge runtime. A caller uses `setup`, `reset`, and
     `step`; the runtime decides whether each step needs a fresh cloud latent.

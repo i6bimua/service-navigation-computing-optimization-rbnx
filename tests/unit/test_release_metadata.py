@@ -33,7 +33,7 @@ def test_benchmark_headline_values_match_structured_results() -> None:
 
     edge = get("Edge Only")
     naive = get("Naive ECC")
-    ours = get("Compute Skill")
+    ours = get("Navigation Computing")
 
     assert round(float(edge["avg_step_latency_ms"]) / float(ours["avg_step_latency_ms"]), 2) == 2.22
     assert round(float(ours["sr_pct"]) - float(naive["sr_pct"]), 1) == 6.1

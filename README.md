@@ -4,8 +4,8 @@
      Markdown between these tags as literal source text. -->
 <div align="center">
 <p><strong>This RoboNix Service is provided and maintained by Prof. Xiang Chen's group (<a href="https://if-lab-pku.github.io/">IFLab</a>), School of Computer Science, Peking University.</strong></p>
-<h1>RoboNix Compute Optimization</h1>
-<p><strong>An open-source compute optimization tool for RoboNix dual-system vision-language navigation</strong></p>
+<h1>RoboNix Navigation Computing Optimization</h1>
+<p><strong>An open-source navigation computing optimization toolkit for RoboNix dual-system VLN</strong></p>
 <p>
   <a href="README.zh-CN.md">简体中文</a> ·
   <a href="#what-this-adds">What this adds</a> ·
@@ -99,7 +99,7 @@ duplicated here.
   <img width="100%" src="docs/assets/benchmark_overview.svg" alt="R2R-CE benchmark overview">
 </div>
 
-Compute Skill optimizes the latency–accuracy trade-off rather than a single
+Navigation Computing optimizes the latency–accuracy trade-off rather than a single
 metric. On Orin+A100, SR remains on par with Edge Only (`62.8` versus `62.9`)
 while average step latency falls by 2.22×. Step Sync reaches a higher SR but
 blocks for `1644.5 ms` per step. The complete Orin and Thor tables are included
@@ -154,6 +154,9 @@ in [Benchmark Results](#benchmark-results).
 <a id="news"></a>
 ## 📰 News
 
+- **2026-08-03 — v0.4.2:** Public branding now uses **Navigation Computing
+  Optimization**; the benchmark method label is **Navigation Computing**. See
+  [CHANGELOG.md](CHANGELOG.md).
 - **2026-07-29 — v0.4.1:** Corrected the trained InternVLA-N1 service loop:
   one action per observed frame, S2 history replay across edge-only steps,
   action-only STOP / LOOK_DOWN handling, forced refresh after an exhausted
@@ -244,14 +247,14 @@ Full field list, episode selection criteria, and editing rules:
 
 Naive asynchronous execution is fast but may repeatedly consume stale semantic
 context. Full step synchronization keeps context fresh but blocks the control
-loop. Compute Skill switches between these behaviors according to runtime
+loop. Navigation Computing switches between these behaviors according to runtime
 state.
 
 <a id="architecture"></a>
 ## 🧠 Architecture
 
 <div align="center">
-  <img width="100%" src="docs/assets/compute_optimization_architecture.png" alt="Compute optimization runtime architecture">
+  <img width="100%" src="docs/assets/compute_optimization_architecture.png" alt="Navigation computing optimization runtime architecture">
 </div>
 
 1. **Fast local loop:** edge S1 consumes the latest observation and active
@@ -435,7 +438,7 @@ licensed assets were parsed and validated but no model result is claimed.
 | Real-model strict preflight | ✅ Executed | InternNav, Habitat, four model shards, S1 weights, depth checkpoint, data, ports, and two GPU IDs |
 | R2R one-episode dual-GPU run | ✅ Connectivity smoke | Completed navigation and produced result, progress, runtime, and telemetry artifacts; not benchmark evidence |
 | R2R-CE 1,839-episode tables | ✅ Project benchmark summary | Compact CSV and metadata are versioned; raw full-split logs are not bundled |
-| R2R difficulty / RxR / REVERIE proxy results | Data preparation only | No Compute Skill full-split result is claimed |
+| R2R difficulty / RxR / REVERIE proxy results | Data preparation only | No Navigation Computing full-split result is claimed |
 | Original REVERIE task | Not supported | Different MatterSim/object-grounding stack; not presented as REVERIE-CE support |
 
 Hosted CI covers the Python 3.9–3.11 test matrix, CPU quick start, CLI entry
@@ -747,7 +750,7 @@ The extended check expects:
 | RxR-CE English compatibility split | 3,669 | Data and nDTW ground truth validated |
 | REVERIE navigation-only proxy | 3,433 | Navigation proxy data validated |
 
-Passing the extended data check does not imply that Compute Skill has a
+Passing the extended data check does not imply that Navigation Computing has a
 full-split result on those optional datasets.
 
 <a id="step-4-strict-preflight"></a>
@@ -893,7 +896,7 @@ and orchestration remain external.
 | Reported edge devices | NVIDIA AGX Jetson Orin and Thor, `MAX_N` |
 | Navigation metrics | NE, SR, SPL |
 | System metrics | Average step latency, peak edge memory, peak cloud memory |
-| Compared strategies | Edge Only, Cloud Only, Naive ECC, Step Sync, Compute Skill |
+| Compared strategies | Edge Only, Cloud Only, Naive ECC, Step Sync, Navigation Computing |
 
 ### 1. Local one-episode connectivity run
 
@@ -989,7 +992,7 @@ python3 benchmarks/r2r_ce/render_results.py
 | Cloud Only | 4.05 | 64.3 | 58.5 | 128.4 ms | — | 16.62 GB |
 | Naive ECC | 4.76 | 56.7 | 45.1 | 202.0 ms | 0.60 GB | 16.03 GB |
 | Step Sync | 4.13 | 65.2 | 58.1 | 1644.5 ms | 0.60 GB | 16.03 GB |
-| **Compute Skill** | **4.18** | **62.8** | **57.8** | **224.4 ms** | **0.60 GB** | **16.03 GB** |
+| **Navigation Computing** | **4.18** | **62.8** | **57.8** | **224.4 ms** | **0.60 GB** | **16.03 GB** |
 
 ### Thor + A100
 
@@ -999,7 +1002,7 @@ python3 benchmarks/r2r_ce/render_results.py
 | Cloud Only | 4.05 | 64.3 | 58.5 | 128.4 ms | — | 16.62 GB |
 | Naive ECC | 4.72 | 56.7 | 45.4 | 164.6 ms | 0.60 GB | 16.03 GB |
 | Step Sync | 4.15 | 64.1 | 57.2 | 1328.0 ms | 0.60 GB | 16.03 GB |
-| **Compute Skill** | **4.14** | **63.1** | **58.1** | **166.3 ms** | **0.60 GB** | **16.03 GB** |
+| **Navigation Computing** | **4.14** | **63.1** | **58.1** | **166.3 ms** | **0.60 GB** | **16.03 GB** |
 
 ### Orin+A100 ablation
 
@@ -1019,7 +1022,7 @@ python3 benchmarks/r2r_ce/render_results.py
 
 Cloud Only is a compute upper bound and does not represent an edge-owned local
 control loop. Step Sync is a freshness upper bound with substantial blocking.
-Compute Skill targets the accuracy–latency trade-off.
+Navigation Computing targets the accuracy–latency trade-off.
 
 ### Reporting boundaries
 
@@ -1038,7 +1041,7 @@ Compute Skill targets the accuracy–latency trade-off.
 The optional extended profile is useful for future generalization studies, but
 the readiness levels are intentionally narrow:
 
-| Dataset | Data validation | Public Compute Skill result |
+| Dataset | Data validation | Public Navigation Computing result |
 | --- | --- | --- |
 | R2R-CE short / medium / long | Episode counts, ranges, and scene assets checked | Not claimed |
 | RxR-CE English compatibility split | 3,669 episodes and nDTW ground truth checked | Not claimed |
@@ -1231,9 +1234,9 @@ and citing it:
 ```bibtex
 @software{robonix_compute_optimization_2026,
   author  = {Cao, Hangyu and Zheng, Zihao},
-  title   = {RoboNix Compute Optimization},
+  title   = {RoboNix Navigation Computing Optimization},
   year    = {2026},
-  version = {0.4.1},
+  version = {0.4.2},
   url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
 }
 ```

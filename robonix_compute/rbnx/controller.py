@@ -1,4 +1,4 @@
-"""Navigation run state machine for the compute-optimization skill.
+"""Navigation run state machine for the navigation computing optimization service.
 
 Owns the observe -> infer -> act loop and the run bookkeeping the
 status / cancel / telemetry contracts read. Deliberately knows nothing about

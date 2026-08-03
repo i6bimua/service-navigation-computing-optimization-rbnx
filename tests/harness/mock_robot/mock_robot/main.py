@@ -4,7 +4,7 @@
 """mock_robot — synthetic robot body for verifying this skill's Atlas wiring.
 
 NOT A PUBLISHED PACKAGE. This is a test fixture: it exists so `rbnx boot` can
-bring up a deployment and the compute-optimization skill can be driven end to
+bring up a deployment and the navigation computing optimization service can be driven end to
 end (contract resolution, image decode, chassis/move dispatch, lifecycle) on a
 machine with no simulator and no checkpoints.
 

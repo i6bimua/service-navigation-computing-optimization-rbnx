@@ -108,7 +108,7 @@ def test_tags_is_a_non_empty_list_of_strings(package):
     assert "skill" not in tags, "a service must not advertise itself as a skill"
     # The mechanism belongs here rather than in the package name — this is one of
     # the places the catalog review explicitly kept it.
-    assert "compute-optimization" in tags
+    assert "navigation-computing-optimization" in tags
 
 
 def test_maintainers_match_the_catalog_regex(package):
