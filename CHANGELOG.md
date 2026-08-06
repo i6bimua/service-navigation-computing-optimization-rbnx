@@ -2,6 +2,16 @@
 
 All notable public changes are recorded here.
 
+## 0.4.3 — 2026-08-06
+
+### Changed
+
+- repository renamed `service-navigation-vln-rbnx` ->
+  `service-navigation-computing-optimization-rbnx` to match the Navigation
+  Computing Optimization branding. Package identity stays
+  `robonix.service.navigation.vln`. GitHub redirects the old path; the package
+  catalog `repo:` entry should be updated to the new URL.
+
 ## 0.4.2 — 2026-08-03
 
 ### Changed

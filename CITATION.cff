@@ -2,16 +2,16 @@ cff-version: 1.2.0
 message: If you use this software, please cite the repository and the upstream InternNav/InternVLA work.
 title: RoboNix Navigation Computing Optimization
 type: software
-version: 0.4.2
-date-released: 2026-08-03
+version: 0.4.3
+date-released: 2026-08-06
 authors:
   - family-names: Cao
     given-names: Hangyu
     email: 202330552461@mail.scut.edu.cn
   - family-names: Zheng
     given-names: Zihao
-repository-code: https://github.com/i6bimua/service-navigation-vln-rbnx
-url: https://github.com/i6bimua/service-navigation-vln-rbnx
+repository-code: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
+url: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
 license: MulanPSL-2.0
 keywords:
   - RoboNix

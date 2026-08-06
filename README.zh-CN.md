@@ -14,7 +14,7 @@
   <a href="#quick-start">快速开始</a>
 </p>
 <p>
-  <a href="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml"><img src="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/i6bimua/service-navigation-computing-optimization-rbnx/actions/workflows/ci.yml"><img src="https://github.com/i6bimua/service-navigation-computing-optimization-rbnx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <br>
   <a href="#benchmark-results"><img src="docs/assets/result_badges.svg" alt="项目指标"></a>
 </p>
@@ -140,6 +140,9 @@ Navigation Computing 优化的是时延与精度的综合权衡，而不是单�
 <a id="news"></a>
 ## 📰 项目动态
 
+- **2026-08-06 — v0.4.3：**仓库改名为
+  [`service-navigation-computing-optimization-rbnx`](https://github.com/i6bimua/service-navigation-computing-optimization-rbnx)。
+  包身份仍为 `robonix.service.navigation.vln`。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-08-03 — v0.4.2：**对外品牌统一为 **Navigation Computing Optimization**
   （导航计算优化）；benchmark 方法名改为 **Navigation Computing**。详见
   [CHANGELOG.md](CHANGELOG.md)。
@@ -303,7 +306,7 @@ Benchmark 路径刻意保持原样。重新实现它的循环会让已发表的 
 service:
   # `name` 必须等于 robonix_compute/rbnx/provider.py 里的 Service(id=...)
   - name: navigation_vln
-    url: https://github.com/i6bimua/service-navigation-vln-rbnx
+    url: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
     branch: main
     config:
       mode: internnav          # 必填、无默认值；唯一真正会导航的后端
@@ -396,8 +399,8 @@ OpenVLA、π0、π0.5、π0-FAST、StreamVLN 等模型不列为已支持。新�
 这条完整 CPU 路径不需要模型权重、仿真数据或 GPU：
 
 ```bash
-git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
-cd service-navigation-vln-rbnx
+git clone https://github.com/i6bimua/service-navigation-computing-optimization-rbnx.git
+cd service-navigation-computing-optimization-rbnx
 
 conda create -n robonix-compute python=3.10 -y
 conda activate robonix-compute
@@ -481,8 +484,8 @@ PyTorch 与 FlashAttention 必须匹配 CUDA 和设备软件栈。Orin/Thor 应�
 ### 1.1 创建环境
 
 ```bash
-git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
-cd service-navigation-vln-rbnx
+git clone https://github.com/i6bimua/service-navigation-computing-optimization-rbnx.git
+cd service-navigation-computing-optimization-rbnx
 export ROBONIX_COMPUTE_ROOT="$(pwd)"
 
 conda create -n robonix-compute python=3.10 -y
@@ -977,7 +980,7 @@ REVERIE proxy 不包含 object grounding、RGS 或 RGSPL，不能称为完整 RE
 ## 🗂️ 仓库结构
 
 ```text
-service-navigation-vln-rbnx/
+service-navigation-computing-optimization-rbnx/
 ├── package_manifest.yaml          # rbnx 与 catalog 读取的 RoboNix 包声明
 ├── CAPABILITY.md                  # 供 Pilot LLM 阅读的能力说明书
 ├── config.spec                    # 全部配置字段的文档
@@ -1116,8 +1119,8 @@ python3 -m build
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Navigation Computing Optimization},
   year    = {2026},
-  version = {0.4.2},
-  url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
+  version = {0.4.3},
+  url     = {https://github.com/i6bimua/service-navigation-computing-optimization-rbnx}
 }
 ```
 

@@ -15,7 +15,7 @@
   <a href="#quick-start">Quick Start</a>
 </p>
 <p>
-  <a href="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml"><img src="https://github.com/i6bimua/service-navigation-vln-rbnx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/i6bimua/service-navigation-computing-optimization-rbnx/actions/workflows/ci.yml"><img src="https://github.com/i6bimua/service-navigation-computing-optimization-rbnx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <br>
   <a href="#benchmark-results"><img src="docs/assets/result_badges.svg" alt="Project metrics"></a>
 </p>
@@ -154,6 +154,10 @@ in [Benchmark Results](#benchmark-results).
 <a id="news"></a>
 ## 📰 News
 
+- **2026-08-06 — v0.4.3:** Repository renamed to
+  [`service-navigation-computing-optimization-rbnx`](https://github.com/i6bimua/service-navigation-computing-optimization-rbnx).
+  Package identity remains `robonix.service.navigation.vln`. See
+  [CHANGELOG.md](CHANGELOG.md).
 - **2026-08-03 — v0.4.2:** Public branding now uses **Navigation Computing
   Optimization**; the benchmark method label is **Navigation Computing**. See
   [CHANGELOG.md](CHANGELOG.md).
@@ -363,7 +367,7 @@ runtime that plugs into it.
 service:
   # `name` must equal Service(id=...) in robonix_compute/rbnx/provider.py
   - name: navigation_vln
-    url: https://github.com/i6bimua/service-navigation-vln-rbnx
+    url: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
     branch: main
     config:
       mode: internnav          # required, no default; the only backend that navigates
@@ -470,8 +474,8 @@ metadata.
 This complete CPU path requires no model weights, simulator data, or GPU:
 
 ```bash
-git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
-cd service-navigation-vln-rbnx
+git clone https://github.com/i6bimua/service-navigation-computing-optimization-rbnx.git
+cd service-navigation-computing-optimization-rbnx
 
 conda create -n robonix-compute python=3.10 -y
 conda activate robonix-compute
@@ -560,8 +564,8 @@ asset under its original license.
 ### 1.1 Create the environment
 
 ```bash
-git clone https://github.com/i6bimua/service-navigation-vln-rbnx.git
-cd service-navigation-vln-rbnx
+git clone https://github.com/i6bimua/service-navigation-computing-optimization-rbnx.git
+cd service-navigation-computing-optimization-rbnx
 export ROBONIX_COMPUTE_ROOT="$(pwd)"
 
 conda create -n robonix-compute python=3.10 -y
@@ -1084,7 +1088,7 @@ MatterSim/object-grounding stack and is deliberately excluded here.
 ## 🗂️ Repository Layout
 
 ```text
-service-navigation-vln-rbnx/
+service-navigation-computing-optimization-rbnx/
 ├── package_manifest.yaml          # RoboNix package surface read by rbnx and the catalog
 ├── CAPABILITY.md                  # Capability manual for Pilot's LLM
 ├── config.spec                    # Every config field, documented
@@ -1236,8 +1240,8 @@ and citing it:
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Navigation Computing Optimization},
   year    = {2026},
-  version = {0.4.2},
-  url     = {https://github.com/i6bimua/service-navigation-vln-rbnx}
+  version = {0.4.3},
+  url     = {https://github.com/i6bimua/service-navigation-computing-optimization-rbnx}
 }
 ```
 
