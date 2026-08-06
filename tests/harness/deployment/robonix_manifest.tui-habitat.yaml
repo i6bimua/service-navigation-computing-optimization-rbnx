@@ -36,13 +36,13 @@
 # the checkpoint load and later runs do not. Warm it up before timing anything.
 #
 # INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
-# navigation_vln.step_size_m / turn_angle_deg, and both MUST equal Habitat's own
+# navigation_computing_optimization.step_size_m / turn_angle_deg, and both MUST equal Habitat's own
 # action space (forward_step_size=0.25, turn_angle=15).
 manifestVersion: 1
 name: robonix-navigation-vln-habitat-internnav-pilot
 
 catalog:
-  name: robonix.robot.testing.navigation_vln_habitat_pilot
+  name: robonix.robot.testing.navigation_computing_optimization_habitat_pilot
   version: "0.1.0"
   description: Local deployment driving the instruction-following navigation service with the trained dual-system policy against real Habitat imagery, with pilot for natural language; not a published robot.
   license: "MulanPSL-2.0"
@@ -98,7 +98,7 @@ primitive:
     path: ../mock_robot
 
 service:
-  - name: navigation_vln
+  - name: navigation_computing_optimization
     path: ../../..
     config:
       # The trained policy. No allow_stub_actions: actions reach chassis/move, so

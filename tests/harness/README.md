@@ -10,7 +10,7 @@ the intent explicit.
 | Directory | Package name | What it is |
 |---|---|---|
 | [mock_robot/](mock_robot/) | `robonix.primitive.testing.mock_robot` | A synthetic body: publishes RGB-D + odometry, accepts `chassis/move` |
-| [deployment/](deployment/) | `robonix.robot.testing.navigation_vln_harness` | A local `robonix_manifest.yaml` wiring the body to the service |
+| [deployment/](deployment/) | `robonix.robot.testing.navigation_computing_optimization_harness` | A local `robonix_manifest.yaml` wiring the body to the service |
 
 ## What this verifies, and what it does not
 
@@ -64,9 +64,9 @@ rbnx build -f robonix_manifest.yaml
 rbnx boot  -f robonix_manifest.yaml
 
 # 3. Inspect (another terminal)
-rbnx caps -v      # mock_robot and navigation_vln both ACTIVE
-rbnx tools        # the four robonix/service/navigation/vln/* tools
-rbnx describe --provider navigation_vln
+rbnx caps -v      # mock_robot and navigation_computing_optimization both ACTIVE
+rbnx tools        # the four robonix/service/navigation/computing_optimization/* tools
+rbnx describe --provider navigation_computing_optimization
 
 # 4. Drive it
 rbnx chat         # "walk down the hallway and stop at the kitchen door"
@@ -75,7 +75,7 @@ rbnx chat         # "walk down the hallway and stop at the kitchen door"
 rbnx shutdown -f robonix_manifest.yaml
 ```
 
-`navigation_vln` reaching `ACTIVE` during boot is correct: services are
+`navigation_computing_optimization` reaching `ACTIVE` during boot is correct: services are
 activated by `rbnx boot` itself, unlike skills, whose just-in-time activation is
 gated on a `robonix/skill` namespace. ACTIVE here means the camera and chassis
 contracts are bound — the compute runtime still loads on the first `navigate`.

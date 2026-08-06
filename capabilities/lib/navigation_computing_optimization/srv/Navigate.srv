@@ -1,4 +1,4 @@
-# robonix/service/navigation/vln/navigate — start a vision-language navigation run.
+# robonix/service/navigation/computing_optimization/navigate — start a vision-language navigation run.
 #
 # The service closes the loop itself: it reads RGB-D + pose from the camera and
 # chassis primitives, asks cloud S2 for a semantic latent when the edge

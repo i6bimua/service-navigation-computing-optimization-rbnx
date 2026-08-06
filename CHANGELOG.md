@@ -2,6 +2,35 @@
 
 All notable public changes are recorded here.
 
+## 0.5.0 — 2026-08-06
+
+Breaking rename of the published package identity to match Navigation Computing
+Optimization. Capability version stays `1`, but every public contract id and the
+deployment instance name change.
+
+### Changed — BREAKING
+
+- package renamed `robonix.service.navigation.vln` ->
+  `robonix.service.navigation.computing_optimization`.
+- contract ids move with the package:
+
+  | Old | New |
+  | --- | --- |
+  | `robonix/service/navigation/vln/driver` | `robonix/service/navigation/computing_optimization/driver` |
+  | `robonix/service/navigation/vln/navigate` | `robonix/service/navigation/computing_optimization/navigate` |
+  | `robonix/service/navigation/vln/navigate/status` | `robonix/service/navigation/computing_optimization/navigate/status` |
+  | `robonix/service/navigation/vln/navigate/cancel` | `robonix/service/navigation/computing_optimization/navigate/cancel` |
+  | `robonix/service/navigation/vln/telemetry` | `robonix/service/navigation/computing_optimization/telemetry` |
+
+- provider `Service(id="navigation_vln")` ->
+  `Service(id="navigation_computing_optimization")`; deployment manifests must
+  rename the `service:` instance to match.
+- IDL package `capabilities/lib/navigation_vln/` ->
+  `capabilities/lib/navigation_computing_optimization/`, so codegen now emits
+  `navigation_computing_optimization_mcp` instead of `navigation_vln_mcp`.
+- update any existing catalog `name:` / `repo:` pairing and any deployment that
+  still lists `navigation_vln`.
+
 ## 0.4.3 — 2026-08-06
 
 ### Changed

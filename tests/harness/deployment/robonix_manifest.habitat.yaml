@@ -28,20 +28,20 @@
 #   #    RoboStack env interpreter (see ../mock_robot/scripts/start.sh).
 #   rbnx build -f robonix_manifest.habitat.yaml
 #   rbnx boot  -f robonix_manifest.habitat.yaml
-#   rbnx caps -v      # mock_robot and navigation_vln both ACTIVE
-#   rbnx tools        # the four robonix/service/navigation/vln/* tools
+#   rbnx caps -v      # mock_robot and navigation_computing_optimization both ACTIVE
+#   rbnx tools        # the four robonix/service/navigation/computing_optimization/* tools
 #   rbnx chat         # "walk down the hallway and stop at the kitchen door"
 #   rbnx shutdown -f robonix_manifest.habitat.yaml
 #
 # INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
-# navigation_vln.step_size_m / turn_angle_deg. The body rejects a command
+# navigation_computing_optimization.step_size_m / turn_angle_deg. The body rejects a command
 # more than 50% off its own increment rather than silently travelling a different
 # distance. tests/unit/test_rbnx_contract_closure.py asserts this.
 manifestVersion: 1
 name: robonix-navigation-vln-habitat-verification
 
 catalog:
-  name: robonix.robot.testing.navigation_vln_habitat
+  name: robonix.robot.testing.navigation_computing_optimization_habitat
   version: "0.1.0"
   description: Local verification deployment driving the instruction-following navigation service against real Habitat imagery through the bridge; not a published robot.
   license: "MulanPSL-2.0"
@@ -119,7 +119,7 @@ service:
   # on the first navigate call.
   #
   # `name` must equal Service(id=...) in robonix_compute/rbnx/provider.py.
-  - name: navigation_vln
+  - name: navigation_computing_optimization
     path: ../../..
     config:
       # `mock` is CPU-only and needs no checkpoints, but it runs the stub edge

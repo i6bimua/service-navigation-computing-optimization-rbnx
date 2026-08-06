@@ -1,4 +1,4 @@
-# robonix/service/navigation/vln/navigate — vision-language navigation from a
+# robonix/service/navigation/computing_optimization/navigate — vision-language navigation from a
 # natural-language instruction.
 #
 # The instruction-following counterpart to `robonix/service/navigation/navigate`
@@ -19,10 +19,10 @@
 # polls it — so a refusal has to be a failure, or that caller is left polling a
 # run that will never exist.
 [contract]
-id      = "robonix/service/navigation/vln/navigate"
+id      = "robonix/service/navigation/computing_optimization/navigate"
 version = "1"
 kind    = "service"
-idl     = "navigation_vln/srv/Navigate.srv"
+idl     = "navigation_computing_optimization/srv/Navigate.srv"
 description = "Navigate by following a natural-language instruction using dual-system vision-language navigation."
 
 [mode]

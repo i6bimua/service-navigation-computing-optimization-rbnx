@@ -39,7 +39,7 @@ RoboNix 生命周期和机器人 I/O。
 具体 S1/S2 模型与权重采用 InternVLA-N1；本文其余内容聚焦本仓库完成的云边部署、
 运行时正确性、调度与 RoboNix 集成。
 
-目录中登记为 `robonix.service.navigation.vln`，因为它对 RoboNix 暴露的是一个长期运行
+目录中登记为 `robonix.service.navigation.computing_optimization`，因为它对 RoboNix 暴露的是一个长期运行
 的导航 Service；导航计算优化是该 Service 的核心实现。云端 S2 属于同一运行时，运行在
 机器人部署外的 GPU 主机上。HTTP 生命周期 API 仍为非 RoboNix 编排器保留。详见
 [RoboNix 集成边界](#robonix-integration-boundary)。
@@ -140,9 +140,13 @@ Navigation Computing 优化的是时延与精度的综合权衡，而不是单�
 <a id="news"></a>
 ## 📰 项目动态
 
+- **2026-08-06 — v0.5.0：**包身份更名为
+  `robonix.service.navigation.vln` →
+  `robonix.service.navigation.computing_optimization`。契约 ID、provider
+  `Service(id=…)`、IDL 包与部署实例名一并迁移。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-08-06 — v0.4.3：**仓库改名为
   [`service-navigation-computing-optimization-rbnx`](https://github.com/i6bimua/service-navigation-computing-optimization-rbnx)。
-  包身份仍为 `robonix.service.navigation.vln`。详见 [CHANGELOG.md](CHANGELOG.md)。
+  该版本包身份仍为 `robonix.service.navigation.vln`。详见 [CHANGELOG.md](CHANGELOG.md)。
 - **2026-08-03 — v0.4.2：**对外品牌统一为 **Navigation Computing Optimization**
   （导航计算优化）；benchmark 方法名改为 **Navigation Computing**。详见
   [CHANGELOG.md](CHANGELOG.md)。
@@ -231,22 +235,22 @@ python scripts/demo/make_demo_reels.py --mode speed \
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix 集成边界
 
-本仓库是一个 RoboNix **Service 软件包** —— `robonix.service.navigation.vln`。
+本仓库是一个 RoboNix **Service 软件包** —— `robonix.service.navigation.computing_optimization`。
 仓库根目录的 `package_manifest.yaml` 声明了五个能力约定，因此 `rbnx boot` 会拉起
 provider、Atlas 会完成注册。能力手册见 [CAPABILITY.md](CAPABILITY.md)，配置字段见
 [config.spec](config.spec)。
 
-`navigation.vln` 描述的是本仓库对 RoboNix 暴露的外部能力边界：它接收指令并管理一项
+`navigation.computing_optimization` 描述的是本仓库对 RoboNix 暴露的外部能力边界：它接收指令并管理一项
 长时导航任务。我们的贡献集中在该边界之后的云边协同执行，包括 S1/S2 拆分部署、
 自适应同步、模型历史一致性、故障处理和逐步遥测，而不是重新定义 VLN 模型本身。
 
 | 提供的能力约定 | 传输 | 用途 |
 | --- | --- | --- |
-| `robonix/service/navigation/vln/driver` | gRPC | 生命周期（`CMD_INIT` / `CMD_ACTIVATE` / …） |
-| `robonix/service/navigation/vln/navigate` | MCP | 按指令启动导航，返回 `run_id` |
-| `robonix/service/navigation/vln/navigate/status` | MCP | 轮询 `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
-| `robonix/service/navigation/vln/navigate/cancel` | MCP | 中止当前任务（幂等） |
-| `robonix/service/navigation/vln/telemetry` | MCP | 单次任务的同步/超时/复用/延迟计数 |
+| `robonix/service/navigation/computing_optimization/driver` | gRPC | 生命周期（`CMD_INIT` / `CMD_ACTIVATE` / …） |
+| `robonix/service/navigation/computing_optimization/navigate` | MCP | 按指令启动导航，返回 `run_id` |
+| `robonix/service/navigation/computing_optimization/navigate/status` | MCP | 轮询 `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
+| `robonix/service/navigation/computing_optimization/navigate/cancel` | MCP | 中止当前任务（幂等） |
+| `robonix/service/navigation/computing_optimization/telemetry` | MCP | 单次任务的同步/超时/复用/延迟计数 |
 
 ### RoboNix TUI 完整链路
 
@@ -293,7 +297,7 @@ Ours 更早得到终态。它验证的是 **RoboNix 集成链路和实际完成�
 | 路径 | 谁拥有 episode 循环 | 仿真器在哪 | 用途 |
 | --- | --- | --- | --- |
 | **Benchmark**（`robonix-compute-habitat-eval`） | InternNav evaluator | 在云端进程内，与 S2 同处 | 复现 R2R-CE 结果。evaluator 拥有 `env.reset` / `env.step`、episode 迭代和 SR/SPL 指标；边端通过 WebSocket 应答 S1 请求。 |
-| **机器人**（`robonix.service.navigation.vln`） | 本 service | 没有仿真器 —— 真实机器人 | 跑在 RoboNix 部署上。service 拥有循环，读相机与底盘约定，下发 `chassis/move`。 |
+| **机器人**（`robonix.service.navigation.computing_optimization`） | 本 service | 没有仿真器 —— 真实机器人 | 跑在 RoboNix 部署上。service 拥有循环，读相机与底盘约定，下发 `chassis/move`。 |
 
 Benchmark 路径刻意保持原样。重新实现它的循环会让已发表的 SR/SPL 变成从我们的循环
 算出来的，而不是 InternNav 经过验证的 harness，因此那条路径一行不改，本仓库只提供
@@ -305,7 +309,7 @@ Benchmark 路径刻意保持原样。重新实现它的循环会让已发表的 
 # robonix_manifest.yaml
 service:
   # `name` 必须等于 robonix_compute/rbnx/provider.py 里的 Service(id=...)
-  - name: navigation_vln
+  - name: navigation_computing_optimization
     url: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
     branch: main
     config:
@@ -320,7 +324,7 @@ service:
 robonix-compute-cloud --mode internnav --port 8765   # 在 GPU 主机上
 rbnx build -f robonix_manifest.yaml                  # 内部执行 rbnx codegen --mcp
 rbnx boot  -f robonix_manifest.yaml
-rbnx caps -v                                         # navigation_vln 显示 ACTIVE
+rbnx caps -v                                         # navigation_computing_optimization 显示 ACTIVE
 rbnx tools                                           # 四个 MCP 工具出现
 ```
 
@@ -986,7 +990,7 @@ service-navigation-computing-optimization-rbnx/
 ├── config.spec                    # 全部配置字段的文档
 ├── capabilities/
 │   ├── *.v1.toml                  # 本包提供的五个契约
-│   └── lib/navigation_vln/srv/    # 四个 MCP 工具的 ROS 2 IDL
+│   └── lib/navigation_computing_optimization/srv/    # 四个 MCP 工具的 ROS 2 IDL
 ├── .github/workflows/ci.yml       # Python 矩阵、CLI、文档、审计与构建
 ├── robonix_compute/
 │   ├── benchmark_data.py          # 授权数据集完整性检查
@@ -1119,7 +1123,7 @@ python3 -m build
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Navigation Computing Optimization},
   year    = {2026},
-  version = {0.4.3},
+  version = {0.5.0},
   url     = {https://github.com/i6bimua/service-navigation-computing-optimization-rbnx}
 }
 ```

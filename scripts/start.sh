@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MulanPSL-2.0
 #
-# Start phase for robonix.service.navigation.vln.
+# Start phase for robonix.service.navigation.computing_optimization.
 #
 # Needs an interpreter that can import BOTH rclpy (to consume the camera and
 # chassis topic contracts) and this repository's `robonix_compute`. Resolution
@@ -39,7 +39,7 @@ fi
 CODEGEN_PROTO="$PKG/rbnx-build/codegen/proto_gen"
 CODEGEN_MCP="$PKG/rbnx-build/codegen/robonix_mcp_types"
 if [[ ! -d "$CODEGEN_PROTO" || ! -d "$CODEGEN_MCP" ]]; then
-    echo "[navigation_vln/start] ERR: codegen output missing — run scripts/build.sh first" >&2
+    echo "[navigation_computing_optimization/start] ERR: codegen output missing — run scripts/build.sh first" >&2
     exit 2
 fi
 
@@ -47,21 +47,21 @@ export PYTHONPATH="$CODEGEN_PROTO:$CODEGEN_MCP:$PKG:${PYTHONPATH:-}"
 if ROBONIX_API="$(rbnx path robonix-api 2>/dev/null)"; then
     export PYTHONPATH="$ROBONIX_API:$PYTHONPATH"
 else
-    echo "[navigation_vln/start] WARN: 'rbnx path robonix-api' failed; relying on an installed robonix-api" >&2
+    echo "[navigation_computing_optimization/start] WARN: 'rbnx path robonix-api' failed; relying on an installed robonix-api" >&2
 fi
 
 # ── Preflight ──────────────────────────────────────────────────────────────
 # Fail here with a precise message rather than letting the provider die on an
 # ImportError several seconds into boot.
 if ! "$PYTHON" -c "import robonix_api" 2>/dev/null; then
-    echo "[navigation_vln/start] ERR: $PYTHON cannot import robonix_api." >&2
-    echo "[navigation_vln/start]   pip install grpcio protobuf pyyaml 'mcp>=1.0' 'fastmcp>=3' into that interpreter." >&2
+    echo "[navigation_computing_optimization/start] ERR: $PYTHON cannot import robonix_api." >&2
+    echo "[navigation_computing_optimization/start]   pip install grpcio protobuf pyyaml 'mcp>=1.0' 'fastmcp>=3' into that interpreter." >&2
     exit 2
 fi
 if ! "$PYTHON" -c "import rclpy" 2>/dev/null; then
-    echo "[navigation_vln/start] ERR: $PYTHON cannot import rclpy." >&2
-    echo "[navigation_vln/start]   The service consumes camera/chassis contracts over ROS 2." >&2
-    echo "[navigation_vln/start]   Source a ROS 2 overlay, or set ROS_PYTHON to a ROS-capable interpreter." >&2
+    echo "[navigation_computing_optimization/start] ERR: $PYTHON cannot import rclpy." >&2
+    echo "[navigation_computing_optimization/start]   The service consumes camera/chassis contracts over ROS 2." >&2
+    echo "[navigation_computing_optimization/start]   Source a ROS 2 overlay, or set ROS_PYTHON to a ROS-capable interpreter." >&2
     exit 2
 fi
 

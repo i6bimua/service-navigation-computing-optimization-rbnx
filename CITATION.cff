@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: If you use this software, please cite the repository and the upstream InternNav/InternVLA work.
 title: RoboNix Navigation Computing Optimization
 type: software
-version: 0.4.3
+version: 0.5.0
 date-released: 2026-08-06
 authors:
   - family-names: Cao

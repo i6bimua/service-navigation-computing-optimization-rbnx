@@ -64,9 +64,9 @@ RTDL_DO = 2
 STATE_NAMES = {0: "PENDING", 1: "RUNNING", 2: "SUCCEEDED", 3: "FAILED", 4: "CANCELED", 5: "TIMEOUT"}
 TERMINAL = {"SUCCEEDED", "FAILED", "CANCELED", "TIMEOUT"}
 
-NAVIGATE = "robonix/service/navigation/vln/navigate"
+NAVIGATE = "robonix/service/navigation/computing_optimization/navigate"
 EXECUTE = "robonix/system/executor/execute"
-SERVICE_INSTANCE = "navigation_vln"
+SERVICE_INSTANCE = "navigation_computing_optimization"
 
 BOOT_TIMEOUT_S = 180.0
 # Comfortably longer than the 2s poll interval, so a plan that polls instead of

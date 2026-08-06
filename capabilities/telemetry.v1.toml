@@ -1,4 +1,4 @@
-# robonix/service/navigation/vln/telemetry — read the navigation computing
+# robonix/service/navigation/computing_optimization/telemetry — read the navigation computing
 # optimization measurements for a navigation run.
 #
 # This is what distinguishes this service from a plain VLN policy: every step
@@ -14,10 +14,10 @@
 #
 # Fields mirror robonix_compute.common.telemetry.TelemetryRecorder.summary().
 [contract]
-id      = "robonix/service/navigation/vln/telemetry"
+id      = "robonix/service/navigation/computing_optimization/telemetry"
 version = "1"
 kind    = "service"
-idl     = "navigation_vln/srv/GetTelemetry.srv"
+idl     = "navigation_computing_optimization/srv/GetTelemetry.srv"
 description = "Read cloud-edge navigation computing optimization telemetry for a navigation run."
 
 [mode]

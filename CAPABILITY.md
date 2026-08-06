@@ -2,7 +2,7 @@
 description: Vision-language navigation — follow a natural-language route description using a dual-system policy whose slow semantic reasoning runs in the cloud and whose fast action generation runs on the edge.
 ---
 
-# robonix.service.navigation.vln — instruction-following navigation service
+# robonix.service.navigation.computing_optimization — instruction-following navigation service
 
 Given a natural-language route description (e.g. `"walk down the hallway, turn
 left at the painting and stop by the kitchen door"`), this service closes the
@@ -32,7 +32,7 @@ a real chassis through the standard contracts.
 
 ## Interface (4 MCP tools)
 
-### `robonix/service/navigation/vln/navigate`
+### `robonix/service/navigation/computing_optimization/navigate`
 
 Start a navigation run. Returns immediately — the run continues in the
 background.
@@ -54,7 +54,7 @@ compatibility and is now always `true`.
 The runtime is loaded on the first `navigate`, so a checkpoint or cloud-link
 problem surfaces as one of those failures rather than at boot.
 
-### `robonix/service/navigation/vln/navigate/status`
+### `robonix/service/navigation/computing_optimization/navigate/status`
 
 Poll a run. Empty `run_id` means the run that is still active; it never resolves
 to a run that has already finished.
@@ -81,7 +81,7 @@ Note that `SUCCEEDED` means *the policy decided it arrived*, not that arrival
 was independently verified. This service carries no goal-checker; verifying
 arrival is the caller's business.
 
-### `robonix/service/navigation/vln/navigate/cancel`
+### `robonix/service/navigation/computing_optimization/navigate/cancel`
 
 Abort the active run. Empty `run_id` cancels whatever is running. Idempotent —
 cancelling a finished run returns `ok=true` with a `no-op` message.
@@ -90,7 +90,7 @@ Cancellation takes effect before the *next* `chassis/move`; the in-flight
 bounded motion completes. Since each motion is a fixed 0.25 m or 15°, the
 robot travels at most one increment past the cancel.
 
-### `robonix/service/navigation/vln/telemetry`
+### `robonix/service/navigation/computing_optimization/telemetry`
 
 Read the navigation computing optimization measurements for a run. Empty `run_id` means the
 most recent run.
@@ -245,7 +245,7 @@ cloud GPU, while the robot stays still. It verifies wiring, not navigation.
 ## Lifecycle
 
 Declare this under `service:` in the deployment manifest, with the instance
-`name: navigation_vln` to match `Service(id=…)`.
+`name: navigation_computing_optimization` to match `Service(id=…)`.
 
 `rbnx boot` sends `CMD_INIT` and then `CMD_ACTIVATE`: a service is activated
 during bring-up rather than on its first call. Activation happens after soma

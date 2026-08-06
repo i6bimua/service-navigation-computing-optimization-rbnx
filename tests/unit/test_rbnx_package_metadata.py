@@ -34,7 +34,7 @@ def _pyproject_field(field: str) -> str:
 
 # The catalog entry this package will be published under. `package.name` must
 # match it byte for byte.
-CATALOG_NAME = "robonix.service.navigation.vln"
+CATALOG_NAME = "robonix.service.navigation.computing_optimization"
 
 # Copied from robonix-package-catalog/scripts/build_catalog.py.
 MAINTAINER_RE = re.compile(r"^[^<>\n]+ <[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+>$")
@@ -137,23 +137,23 @@ def test_every_capability_entry_has_a_name_and_a_resolvable_path(manifest):
 
 def test_capability_names_are_under_the_declared_namespace(manifest):
     for entry in manifest["capabilities"]:
-        assert entry["name"].startswith("robonix/service/navigation/vln/"), entry["name"]
+        assert entry["name"].startswith("robonix/service/navigation/computing_optimization/"), entry["name"]
 
 
 def test_the_mandatory_driver_contract_is_declared(manifest):
     # rbnx boot sends Driver(CMD_INIT) against this; without it the on_init
     # handler never fires and every MCP call fails.
     names = {entry["name"] for entry in manifest["capabilities"]}
-    assert "robonix/service/navigation/vln/driver" in names
+    assert "robonix/service/navigation/computing_optimization/driver" in names
 
 
 def test_the_long_task_triple_is_complete(manifest):
     # The executor polls status until a terminal state and needs cancel to abort.
     names = {entry["name"] for entry in manifest["capabilities"]}
     assert {
-        "robonix/service/navigation/vln/navigate",
-        "robonix/service/navigation/vln/navigate/status",
-        "robonix/service/navigation/vln/navigate/cancel",
+        "robonix/service/navigation/computing_optimization/navigate",
+        "robonix/service/navigation/computing_optimization/navigate/status",
+        "robonix/service/navigation/computing_optimization/navigate/cancel",
     } <= names
 
 

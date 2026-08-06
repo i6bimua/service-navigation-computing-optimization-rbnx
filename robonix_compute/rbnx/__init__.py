@@ -1,4 +1,4 @@
-"""Robonix package layer for robonix.service.navigation.vln.
+"""Robonix package layer for robonix.service.navigation.computing_optimization.
 
 This subpackage is the Robonix-native boundary: it registers the compute
 runtime with Atlas as a Service provider, exposes the navigate / status /

@@ -1,7 +1,7 @@
 # Habitat demo filming guide
 
 This is the filming script for a **side-by-side** Habitat demo of
-`robonix.service.navigation.vln`. The public README links here; the automation
+`robonix.service.navigation.computing_optimization`. The public README links here; the automation
 lives under `scripts/demo/` and `benchmarks/r2r_ce/demo_episodes.yaml`.
 
 ## Goal

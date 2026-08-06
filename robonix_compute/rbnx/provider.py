@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MulanPSL-2.0
-"""robonix.service.navigation.vln — Atlas bridge.
+"""robonix.service.navigation.computing_optimization — Atlas bridge.
 
 Registers the navigation-computing-optimized dual-system VLN runtime as a Robonix Service
 and exposes four MCP tools (navigate / status / cancel / telemetry).
@@ -48,17 +48,17 @@ from robonix_compute.rbnx.config import STUB_ACTION_MODES, parse_config
 from robonix_compute.rbnx.controller import RunLimits, NavigationController
 from robonix_compute.rbnx.observation import ObservationBuffer
 
-logging.basicConfig(level=logging.INFO, format="[navigation_vln] %(levelname)s %(message)s")
-log = logging.getLogger("navigation_vln")
+logging.basicConfig(level=logging.INFO, format="[navigation_computing_optimization] %(levelname)s %(message)s")
+log = logging.getLogger("navigation_computing_optimization")
 
 # `id` must equal the instance `name` in the deployment manifest's `service:`
 # section; the namespace is what Atlas routes on.
-service = Service(id="navigation_vln", namespace="robonix/service/navigation/vln")
+service = Service(id="navigation_computing_optimization", namespace="robonix/service/navigation/computing_optimization")
 
-# Codegen output from capabilities/lib/navigation_vln/srv/*.srv. robonix_api puts
+# Codegen output from capabilities/lib/navigation_computing_optimization/srv/*.srv. robonix_api puts
 # rbnx-build/codegen/{proto_gen,robonix_mcp_types} on sys.path at import time,
 # so this resolves after `scripts/build.sh` has run.
-from navigation_vln_mcp import (  # noqa: E402
+from navigation_computing_optimization_mcp import (  # noqa: E402
     CancelNavigate_Request,
     CancelNavigate_Response,
     GetNavigateStatus_Request,
@@ -297,7 +297,7 @@ def _reject(message: str) -> NoReturn:
 
 
 # ── MCP tools ───────────────────────────────────────────────────────────────
-@service.mcp("robonix/service/navigation/vln/navigate")
+@service.mcp("robonix/service/navigation/computing_optimization/navigate")
 def navigate(req: Navigate_Request) -> Navigate_Response:
     """Navigate by following a natural-language instruction, e.g. "walk down
     the hallway, turn left at the painting and stop by the kitchen door".
@@ -341,7 +341,7 @@ def navigate(req: Navigate_Request) -> Navigate_Response:
     return Navigate_Response(accepted=True, run_id=run.run_id, message="navigation started")
 
 
-@service.mcp("robonix/service/navigation/vln/navigate/status")
+@service.mcp("robonix/service/navigation/computing_optimization/navigate/status")
 def navigate_status(req: GetNavigateStatus_Request) -> GetNavigateStatus_Response:
     """Poll a navigation run. Empty run_id means the run that is still active.
     `state` is one of PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED, TIMEOUT."""
@@ -379,7 +379,7 @@ def navigate_status(req: GetNavigateStatus_Request) -> GetNavigateStatus_Respons
     )
 
 
-@service.mcp("robonix/service/navigation/vln/navigate/cancel")
+@service.mcp("robonix/service/navigation/computing_optimization/navigate/cancel")
 def navigate_cancel(req: CancelNavigate_Request) -> CancelNavigate_Response:
     """Abort the active navigation run. Empty run_id cancels whatever is
     running. Idempotent."""
@@ -394,7 +394,7 @@ def navigate_cancel(req: CancelNavigate_Request) -> CancelNavigate_Response:
     return CancelNavigate_Response(ok=ok, message=message)
 
 
-@service.mcp("robonix/service/navigation/vln/telemetry")
+@service.mcp("robonix/service/navigation/computing_optimization/telemetry")
 def navigate_telemetry(req: GetTelemetry_Request) -> GetTelemetry_Response:
     """Read cloud-edge navigation computing optimization measurements for a navigation run:
     how many steps requested a fresh cloud latent, how many cloud responses

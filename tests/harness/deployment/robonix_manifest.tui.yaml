@@ -19,18 +19,18 @@
 #   export VLM_BASE_URL VLM_API_KEY VLM_MODEL  # set all three in your shell first
 #   rbnx build -f robonix_manifest.tui.yaml
 #   rbnx boot  -f robonix_manifest.tui.yaml
-#   rbnx caps -v      # mock_robot and navigation_vln both ACTIVE
-#   rbnx tools        # the four robonix/service/navigation/vln/* tools
+#   rbnx caps -v      # mock_robot and navigation_computing_optimization both ACTIVE
+#   rbnx tools        # the four robonix/service/navigation/computing_optimization/* tools
 #   rbnx chat         # "walk down the hallway and stop at the kitchen door"
 #   rbnx shutdown -f robonix_manifest.tui.yaml
 #
 # INVARIANT: mock_robot.step_size_m / turn_angle_deg MUST equal
-# navigation_vln.step_size_m / turn_angle_deg.
+# navigation_computing_optimization.step_size_m / turn_angle_deg.
 manifestVersion: 1
 name: robonix-navigation-vln-local-verification-pilot
 
 catalog:
-  name: robonix.robot.testing.navigation_vln_harness_pilot
+  name: robonix.robot.testing.navigation_computing_optimization_harness_pilot
   version: "0.1.0"
   description: Local verification deployment with pilot enabled, for demonstrating rbnx chat against a synthetic body; not a published robot.
   license: "MulanPSL-2.0"
@@ -80,7 +80,7 @@ primitive:
       hfov_deg: 79.0
 
 service:
-  - name: navigation_vln
+  - name: navigation_computing_optimization
     path: ../../..
     config:
       mode: mock

@@ -43,7 +43,7 @@ The concrete S1/S2 model and weights are InternVLA-N1; the rest of this document
 focuses on this repository's cloud–edge deployment, runtime correctness,
 scheduling, and RoboNix integration.
 
-The catalog identity is `robonix.service.navigation.vln` because the external
+The catalog identity is `robonix.service.navigation.computing_optimization` because the external
 RoboNix boundary is a long-running navigation service; cloud–edge compute
 optimization is its core implementation. Cloud S2 belongs to the same runtime
 on a GPU host outside the robot deployment. An HTTP lifecycle API remains for
@@ -154,9 +154,14 @@ in [Benchmark Results](#benchmark-results).
 <a id="news"></a>
 ## 📰 News
 
+- **2026-08-06 — v0.5.0:** Package identity renamed
+  `robonix.service.navigation.vln` →
+  `robonix.service.navigation.computing_optimization`. Every contract id,
+  the provider `Service(id=…)`, the IDL package, and deployment instance names
+  move with it. See [CHANGELOG.md](CHANGELOG.md).
 - **2026-08-06 — v0.4.3:** Repository renamed to
   [`service-navigation-computing-optimization-rbnx`](https://github.com/i6bimua/service-navigation-computing-optimization-rbnx).
-  Package identity remains `robonix.service.navigation.vln`. See
+  Package identity remained `robonix.service.navigation.vln` in that release. See
   [CHANGELOG.md](CHANGELOG.md).
 - **2026-08-03 — v0.4.2:** Public branding now uses **Navigation Computing
   Optimization**; the benchmark method label is **Navigation Computing**. See
@@ -282,13 +287,13 @@ memory, and optional diffusion latents remain behind adapters.
 <a id="robonix-integration-boundary"></a>
 ## 🔌 RoboNix Integration Boundary
 
-This repository is a RoboNix **Service package** — `robonix.service.navigation.vln`.
+This repository is a RoboNix **Service package** — `robonix.service.navigation.computing_optimization`.
 `package_manifest.yaml` at the repository root declares five capability
 contracts, so `rbnx boot` starts the provider and Atlas registers it. See
 [CAPABILITY.md](CAPABILITY.md) for the capability manual and
 [config.spec](config.spec) for every config field.
 
-`navigation.vln` names the external RoboNix capability boundary: it accepts an
+`navigation.computing_optimization` names the external RoboNix capability boundary: it accepts an
 instruction and manages a long-running navigation task. Our contribution is the
 cloud–edge execution behind that boundary — split S1/S2 deployment, adaptive
 synchronization, consistent model history, failure handling, and step-level
@@ -296,11 +301,11 @@ telemetry — rather than redefining the VLN model itself.
 
 | Contract | Transport | Purpose |
 | --- | --- | --- |
-| `robonix/service/navigation/vln/driver` | gRPC | Lifecycle (`CMD_INIT` / `CMD_ACTIVATE` / …) |
-| `robonix/service/navigation/vln/navigate` | MCP | Start a run from an instruction → `run_id` |
-| `robonix/service/navigation/vln/navigate/status` | MCP | Poll `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
-| `robonix/service/navigation/vln/navigate/cancel` | MCP | Abort the active run (idempotent) |
-| `robonix/service/navigation/vln/telemetry` | MCP | Per-run sync / timeout / reuse / latency counters |
+| `robonix/service/navigation/computing_optimization/driver` | gRPC | Lifecycle (`CMD_INIT` / `CMD_ACTIVATE` / …) |
+| `robonix/service/navigation/computing_optimization/navigate` | MCP | Start a run from an instruction → `run_id` |
+| `robonix/service/navigation/computing_optimization/navigate/status` | MCP | Poll `PENDING`/`RUNNING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`TIMEOUT` |
+| `robonix/service/navigation/computing_optimization/navigate/cancel` | MCP | Abort the active run (idempotent) |
+| `robonix/service/navigation/computing_optimization/telemetry` | MCP | Per-run sync / timeout / reuse / latency counters |
 
 ### Complete RoboNix TUI path
 
@@ -353,7 +358,7 @@ benchmark numbers above.
 | Path | Who owns the episode loop | Where the simulator is | What it is for |
 | --- | --- | --- | --- |
 | **Benchmark** (`robonix-compute-habitat-eval`) | The InternNav evaluator | Inside the cloud process, next to S2 | Reproducing the R2R-CE results. The evaluator owns `env.reset` / `env.step`, episode iteration and the SR/SPL metrics; the edge answers S1 requests over WebSocket. |
-| **Robot** (`robonix.service.navigation.vln`) | This service | No simulator — a real robot | Running on a RoboNix deployment. The service owns the loop, reads the camera and chassis contracts, and issues `chassis/move`. |
+| **Robot** (`robonix.service.navigation.computing_optimization`) | This service | No simulator — a real robot | Running on a RoboNix deployment. The service owns the loop, reads the camera and chassis contracts, and issues `chassis/move`. |
 
 The benchmark path is deliberately left as it is. Re-implementing its loop would
 mean the published SR/SPL came from our loop rather than InternNav's validated
@@ -366,7 +371,7 @@ runtime that plugs into it.
 # robonix_manifest.yaml
 service:
   # `name` must equal Service(id=...) in robonix_compute/rbnx/provider.py
-  - name: navigation_vln
+  - name: navigation_computing_optimization
     url: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
     branch: main
     config:
@@ -381,7 +386,7 @@ service:
 robonix-compute-cloud --mode internnav --port 8765   # on the GPU host
 rbnx build -f robonix_manifest.yaml                  # runs rbnx codegen --mcp
 rbnx boot  -f robonix_manifest.yaml
-rbnx caps -v                                         # navigation_vln ACTIVE
+rbnx caps -v                                         # navigation_computing_optimization ACTIVE
 rbnx tools                                           # the four MCP tools appear
 ```
 
@@ -1094,7 +1099,7 @@ service-navigation-computing-optimization-rbnx/
 ├── config.spec                    # Every config field, documented
 ├── capabilities/
 │   ├── *.v1.toml                  # The five contracts this package provides
-│   └── lib/navigation_vln/srv/    # ROS 2 IDL for the four MCP tools
+│   └── lib/navigation_computing_optimization/srv/    # ROS 2 IDL for the four MCP tools
 ├── .github/workflows/ci.yml       # Python matrix, CLI, docs, audit and build
 ├── robonix_compute/
 │   ├── benchmark_data.py          # Licensed dataset integrity checks
@@ -1240,7 +1245,7 @@ and citing it:
   author  = {Cao, Hangyu and Zheng, Zihao},
   title   = {RoboNix Navigation Computing Optimization},
   year    = {2026},
-  version = {0.4.3},
+  version = {0.5.0},
   url     = {https://github.com/i6bimua/service-navigation-computing-optimization-rbnx}
 }
 ```

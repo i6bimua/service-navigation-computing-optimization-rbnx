@@ -1,4 +1,4 @@
-# robonix/service/navigation/vln/navigate/cancel — abort the active navigation
+# robonix/service/navigation/computing_optimization/navigate/cancel — abort the active navigation
 # run.
 #
 # Stops the observe/infer/act loop before the next chassis/move is issued.
@@ -10,10 +10,10 @@
 # Required alongside the status sibling for `navigate` to be treated as async;
 # like status, it answers without a loaded runtime.
 [contract]
-id      = "robonix/service/navigation/vln/navigate/cancel"
+id      = "robonix/service/navigation/computing_optimization/navigate/cancel"
 version = "1"
 kind    = "service"
-idl     = "navigation_vln/srv/CancelNavigate.srv"
+idl     = "navigation_computing_optimization/srv/CancelNavigate.srv"
 description = "Cancel a navigation run."
 
 [mode]

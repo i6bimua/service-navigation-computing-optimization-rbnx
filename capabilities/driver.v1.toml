@@ -16,7 +16,7 @@
 # Without this contract the on_init handler never fires and every call returns
 # "not initialized".
 [contract]
-id      = "robonix/service/navigation/vln/driver"
+id      = "robonix/service/navigation/computing_optimization/driver"
 version = "1"
 kind    = "service"
 idl     = "lifecycle/srv/Driver.srv"

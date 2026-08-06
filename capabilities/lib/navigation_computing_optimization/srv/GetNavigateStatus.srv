@@ -1,4 +1,4 @@
-# robonix/service/navigation/vln/navigate/status — poll a navigation run.
+# robonix/service/navigation/computing_optimization/navigate/status — poll a navigation run.
 #
 # Empty run_id means "the run that is still active", so a caller running one
 # navigation at a time does not have to track ids. It never resolves to a run

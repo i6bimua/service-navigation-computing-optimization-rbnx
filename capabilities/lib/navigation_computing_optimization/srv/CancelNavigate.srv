@@ -1,4 +1,4 @@
-# robonix/service/navigation/vln/navigate/cancel — abort the currently running navigation.
+# robonix/service/navigation/computing_optimization/navigate/cancel — abort the currently running navigation.
 #
 # Empty run_id = cancel whatever is active. Idempotent: cancelling an
 # already-finished run is ok=true with a "no-op" message.

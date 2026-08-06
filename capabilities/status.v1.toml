@@ -1,4 +1,4 @@
-# robonix/service/navigation/vln/navigate/status — poll progress of a running
+# robonix/service/navigation/computing_optimization/navigate/status — poll progress of a running
 # navigation.
 #
 # The executor polls this every ~2s until `state` reaches a terminal value
@@ -14,10 +14,10 @@
 # id that is unknown now stays unknown, so PENDING would keep the poll loop above
 # running with nothing left to wait for.
 [contract]
-id      = "robonix/service/navigation/vln/navigate/status"
+id      = "robonix/service/navigation/computing_optimization/navigate/status"
 version = "1"
 kind    = "service"
-idl     = "navigation_vln/srv/GetNavigateStatus.srv"
+idl     = "navigation_computing_optimization/srv/GetNavigateStatus.srv"
 description = "Read the state and step progress of a navigation run."
 
 [mode]

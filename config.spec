@@ -1,4 +1,4 @@
-# Runtime config accepted by robonix.service.navigation.vln.
+# Runtime config accepted by robonix.service.navigation.computing_optimization.
 #
 # This file documents the mapping passed as this package's `config:` value in
 # a deployment `robonix_manifest.yaml`, delivered to on_init through
