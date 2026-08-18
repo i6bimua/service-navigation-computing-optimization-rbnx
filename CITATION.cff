@@ -10,6 +10,8 @@ authors:
     email: 202330552461@mail.scut.edu.cn
   - family-names: Zheng
     given-names: Zihao
+    alias: zhengzihaoPKU
+    website: https://github.com/zhengzihaoPKU
 repository-code: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
 url: https://github.com/i6bimua/service-navigation-computing-optimization-rbnx
 license: MulanPSL-2.0
