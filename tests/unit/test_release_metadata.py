@@ -68,3 +68,5 @@ def test_contributor_and_citation_metadata_match() -> None:
     assert "given-names: Hangyu" in citation
     assert "family-names: Zheng" in citation
     assert "given-names: Zihao" in citation
+    assert "alias: zhengzihaoPKU" in citation
+    assert "website: https://github.com/zhengzihaoPKU" in citation
